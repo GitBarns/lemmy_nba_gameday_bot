@@ -20,7 +20,7 @@ class MarkupUtils:
     @staticmethod
     def get_game_body(box_score, live_game):
         body = MarkupUtils.get_match_summary(live_game)
-        body = f"{body}\n{MarkupUtils.get_game_quarter_summary(box_score)}"
+        body = f"{body}\n{MarkupUtils.get_game_quarter_summary(live_game)}"
         body = f"{body}\n---"
         body = f"{body}\n{MarkupUtils.get_single_team_body('homeTeam', box_score, live_game)}"
         body = f"{body}\n---"
@@ -87,16 +87,24 @@ class MarkupUtils:
 
     @staticmethod
     def get_thread_title(game):
-        name = f"GAME THREAD: {game['awayTeam']['teamCity']} {game['awayTeam']['teamName']} ({game['awayTeam']['wins']}:{game['awayTeam']['losses']})"
-        name = f"{name} @ {game['homeTeam']['teamCity']} {game['homeTeam']['teamName']} ({game['homeTeam']['wins']}:{game['homeTeam']['losses']})"
-        logging.info("SET Post Title: " + name)
-        return name
+        title = f"GAME THREAD: {game['awayTeam']['teamCity']} {game['awayTeam']['teamName']} ({game['awayTeam']['wins']}:{game['awayTeam']['losses']})"
+        title = f"{title} @ {game['homeTeam']['teamCity']} {game['homeTeam']['teamName']} ({game['homeTeam']['wins']}:{game['homeTeam']['losses']})"
+        game_time = parser.parse(timestr=game["gameTimeUTC"]).astimezone(pytz.timezone('US/Eastern'))
+        title = f"{title} - {game_time.strftime('%a, %b %-d, %H:%M EST')}"
+        logging.info("SET Post Title: " + title)
+        return title
 
     @staticmethod
     def get_pgt_title(game):
-        verb = random.choice(['defeat', 'win over', 'overcome', 'beat'])
         winner = (game['homeTeam'] if game['homeTeam']['score'] > game['awayTeam']['score'] else game['awayTeam'])
         loser = (game['homeTeam'] if game['homeTeam']['score'] < game['awayTeam']['score'] else game['awayTeam'])
-        name = f"POST GAME THREAD: The {winner['teamCity']} {winner['teamName']} {verb} the {loser['teamCity']} {loser['teamName']}, {winner['score']}-{loser['score']}"
+        verb = random.choice(['defeat', 'win over', 'overcome', 'beat'])
+        margin = winner['score'] - loser['score']
+        if margin < 5:
+            verb = random.choice(['barely make it against', 'win over'])
+        elif margin > 15:
+            verb = random.choice(['crush', 'obliterate', 'destroy'])
+        name = f"POST GAME THREAD: The {winner['teamCity']} {winner['teamName']} ({winner['wins']}:{winner['losses']})" \
+               f" {verb} the {loser['teamCity']} {loser['teamName']} ({loser['wins']}:{loser['losses']}), {winner['score']}-{loser['score']}"
         logging.info(f"SET Post Game Thread Title: {name}")
         return name

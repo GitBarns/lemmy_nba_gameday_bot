@@ -138,7 +138,7 @@ class NBAGamePostMaker:
         box_score = summerboxscore.SummerBoxScore(
             game_id=game["gameId"]) if self.is_summer_league else boxscore.BoxScore(game_id=game["gameId"])
         name = MarkupUtils.get_pgt_title(game)
-        body = MarkupUtils.get_game_body(box_score, game)
+        body = MarkupUtils.get_game_body(box_score.get_dict()['game'], game)
         while not self.lemmy.post.create(community_id=self.community_id, name=name, body=body, language_id=37):
             logging.warning("Failed to create PGT, will retry again in 2 seconds")
             time.sleep(2)

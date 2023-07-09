@@ -19,8 +19,8 @@ def run_post_maker(domain, community, username, password, is_summer_league):
             time.sleep(5 * retry)
         logging.info(f"Logged into {domain}/c/{community}, will begin processing games")
         post_maker.process_posts()
-    except Exception as err:
-        logging.error("Failed to process match threads", err)
+    except Exception:
+        logging.exception("Failed to process match threads")
 
 
 def main():
