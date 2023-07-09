@@ -8,10 +8,19 @@ from dateutil import parser
 
 
 class MarkupUtils:
+
+    @staticmethod
+    def get_live_game_body(live_game):
+        body = MarkupUtils.get_match_summary(live_game)
+        body = f"{body}\n{MarkupUtils.get_game_quarter_summary(live_game)}"
+        body = f"{body}\n---"
+        body = f"{body}\n{MarkupUtils.get_footer(live_game['gameId'])}"
+        return body
+
     @staticmethod
     def get_game_body(box_score, live_game):
         body = MarkupUtils.get_match_summary(live_game)
-        body = f"{body}\n{MarkupUtils.get_game_quarter_summary(box_score, live_game)}"
+        body = f"{body}\n{MarkupUtils.get_game_quarter_summary(box_score)}"
         body = f"{body}\n---"
         body = f"{body}\n{MarkupUtils.get_single_team_body('homeTeam', box_score, live_game)}"
         body = f"{body}\n---"
@@ -36,17 +45,17 @@ class MarkupUtils:
         return footer
 
     @staticmethod
-    def get_game_quarter_summary(box_score, live_game):
+    def get_game_quarter_summary(live_game):
         title = "| TEAM | Q1 | Q2 | Q3 | Q4 | "
         low_title = "| :--- | :---: | :---: | :---: | :---: | "
-        home_team = f"| **{box_score['homeTeam']['teamCity']} {box_score['homeTeam']['teamName']}** | {box_score['homeTeam']['periods'][0]['score']} | {box_score['homeTeam']['periods'][1]['score']} | {box_score['homeTeam']['periods'][2]['score']} | {box_score['homeTeam']['periods'][3]['score']} |"
-        away_team = f"| **{box_score['awayTeam']['teamCity']} {box_score['awayTeam']['teamName']}** | {box_score['awayTeam']['periods'][0]['score']} | {box_score['awayTeam']['periods'][1]['score']} | {box_score['awayTeam']['periods'][2]['score']} | {box_score['awayTeam']['periods'][3]['score']} | "
+        home_team = f"| **{live_game['homeTeam']['teamCity']} {live_game['homeTeam']['teamName']}** | {live_game['homeTeam']['periods'][0]['score']} | {live_game['homeTeam']['periods'][1]['score']} | {live_game['homeTeam']['periods'][2]['score']} | {live_game['homeTeam']['periods'][3]['score']} |"
+        away_team = f"| **{live_game['awayTeam']['teamCity']} {live_game['awayTeam']['teamName']}** | {live_game['awayTeam']['periods'][0]['score']} | {live_game['awayTeam']['periods'][1]['score']} | {live_game['awayTeam']['periods'][2]['score']} | {live_game['awayTeam']['periods'][3]['score']} | "
         if len(live_game['homeTeam']['periods']) > 4:
             for ot in range(4, len(live_game['homeTeam']['periods'])):
                 title = f"{title}OT{ot - 4} | "
                 low_title = f"{low_title}:---: | "
-                home_team = f"{home_team}{box_score['homeTeam']['periods'][ot]['score']} | "
-                away_team = f"{away_team}{box_score['awayTeam']['periods'][ot]['score']} | "
+                home_team = f"{home_team}{live_game['homeTeam']['periods'][ot]['score']} | "
+                away_team = f"{away_team}{live_game['awayTeam']['periods'][ot]['score']} | "
         if live_game["gameStatus"] == 3:
             title = f"{title}FINAL | "
             low_title = f"{low_title}:---: | "

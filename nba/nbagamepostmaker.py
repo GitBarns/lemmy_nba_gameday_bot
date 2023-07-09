@@ -40,22 +40,31 @@ class NBAGamePostMaker:
 
         # Today's Score Board
         scorebox_games = summerscoreboard.SummerScoreBoard().games.get_dict() if self.is_summer_league else scoreboard.ScoreBoard().games.get_dict()
-        [logging.info(f"Found game in today's scorebox: {PostUtils.game_info(game)}") for game in scorebox_games]
+        [logging.info(f"Found a game in today's scorebox: {PostUtils.game_info(game)}") for game in scorebox_games]
 
-        upcoming_games = get_upcoming_games(scorebox_games)
-        [logging.info(f"Found upcoming game: {PostUtils.game_info(game)}") for game in upcoming_games]
+        upcoming_games = self.get_upcoming_games(scorebox_games)
+        [logging.info(f"Found an  upcoming game: {PostUtils.game_info(game)}") for game in upcoming_games]
         self.create_new_game_posts(upcoming_games, lemmy_posts)
 
         live_games = [game for game in scorebox_games if game["gameStatus"] == 2]
-        [logging.info(f"Found live game: {PostUtils.game_info(game)}") for game in live_games]
+        [logging.info(f"Found a live game: {PostUtils.game_info(game)}") for game in live_games]
         self.update_live_threads(live_games, lemmy_posts)
 
         finished_games = [game for game in scorebox_games if game["gameStatus"] == 3]
-        [logging.info(f"Found finished game: {PostUtils.game_info(game)}") for game in finished_games]
+        [logging.info(f"Found a finished game: {PostUtils.game_info(game)}") for game in finished_games]
         self.close_finished_games(finished_games, lemmy_posts)
 
-        orphan_posts = get_orphan_posts(scorebox_games, lemmy_posts)
-        [self.close_game(game=post, post_id=post["post"]["id"]) for post in orphan_posts]
+        self.close_orphan_posts(scorebox_games, lemmy_posts)
+
+    def get_upcoming_games(self, games):
+        upcoming_games = []
+        for game in games:
+            gameutc = parser.parse(game['gameTimeUTC']).astimezone(pytz.UTC)
+            time_to_game = (datetime.now(pytz.utc) - gameutc).seconds
+            if 0 < time_to_game < 30 * 60 and game["gameStatus"] == 1:
+                logging.debug(f"game is upcoming {game}")
+                upcoming_games.append(game)
+        return upcoming_games
 
     def create_new_game_posts(self, upcoming_games, lemmy_posts):
         for upcoming_game in upcoming_games:
@@ -70,8 +79,7 @@ class NBAGamePostMaker:
     def create_new_game_thread(self, game):
         logging.info(f"CREATE a new game post: {PostUtils.game_info(game)}")
         name = MarkupUtils.get_thread_title(game)
-        body = f"{MarkupUtils.get_match_summary(game)}\n" \
-               f"{MarkupUtils.get_footer(game['gameId'])}"
+        body = MarkupUtils.get_live_game_body(game)
         while not (response := self.lemmy.post.create(community_id=self.community_id, name=name, body=body,
                                                       language_id=37)):
             logging.warning("Failed to create post, will retry again in 2 seconds")
@@ -93,17 +101,15 @@ class NBAGamePostMaker:
                 if live_game["gameId"] == lemmy_game_id:
                     post_id = lemmy_game["post"]["id"]
             if not post_id:
-                logging.warning(f"Found a LIVE game without a thread, will create it for {PostUtils.game_info(live_game)}")
+                logging.warning(
+                    f"Found a LIVE game without a thread, will create it for {PostUtils.game_info(live_game)}")
                 post_id = self.create_new_game_thread(live_game)
             logging.info(f"UPDATE Post for {PostUtils.game_info(live_game)}")
-            bs = summerboxscore.SummerBoxScore(
-                game_id=live_game["gameId"]) if self.is_summer_league else boxscore.BoxScore(
-                game_id=live_game["gameId"])
-            self.update_game_thread(bs.get_dict()['game'], live_game, post_id, False)
+            self.update_game_thread(live_game, post_id, False)
 
-    def update_game_thread(self, bs, live_game, post_id, final):
+    def update_game_thread(self, live_game, post_id, final):
         name = MarkupUtils.get_thread_title(live_game) + " [FINAL]" if final else None
-        body = MarkupUtils.get_game_body(bs, live_game)
+        body = MarkupUtils.get_live_game_body(live_game)
         while not self.lemmy.post.edit(post_id=post_id, body=body, name=name):
             logging.warning("Failed to update post, will retry again in 2 seconds")
             time.sleep(2)
@@ -116,46 +122,34 @@ class NBAGamePostMaker:
                 if game["gameId"] == lemmy_game_id:
                     post_id = lemmy_game["post"]["id"]
             if post_id:
-                bs = summerboxscore.SummerBoxScore(
-                    game_id=game["gameId"]) if self.is_summer_league else boxscore.BoxScore(game_id=game["gameId"])
-                self.close_game(bs.get_dict()['game'], game, post_id)
+                self.close_game(post_id, game)
 
-    def close_game(self, game, post_id, bs=None):
-        if bs:
-            logging.info(f"FINAL UPDATE - for Post ID {post_id} ")
-            self.update_game_thread(bs, game, post_id, True)
+    def close_game(self, post_id, game):
+        logging.info(f"FINAL UPDATE - for Post ID {post_id} ")
+        self.update_game_thread(game, post_id, True)
         logging.info(f"CLOSE Post ID {post_id} ")
         while not self.lemmy.post.save(post_id, False):
             logging.warning("Failed to un-save post, will retry again in 2 seconds")
             time.sleep(2)
-        self.create_pgt(bs, game)
+        self.create_pgt(game)
 
-    def create_pgt(self, box_score, live_game):
-        logging.info(f"CREATE New Post Game Thread: {live_game}")
-        name = MarkupUtils.get_pgt_title(live_game)
-        body = MarkupUtils.get_game_body(box_score, live_game)
+    def create_pgt(self, game):
+        logging.info(f"CREATE New Post Game Thread: {PostUtils.game_info(game)}")
+        box_score = summerboxscore.SummerBoxScore(
+            game_id=game["gameId"]) if self.is_summer_league else boxscore.BoxScore(game_id=game["gameId"])
+        name = MarkupUtils.get_pgt_title(game)
+        body = MarkupUtils.get_game_body(box_score, game)
         while not self.lemmy.post.create(community_id=self.community_id, name=name, body=body, language_id=37):
             logging.warning("Failed to create PGT, will retry again in 2 seconds")
             time.sleep(2)
-        logging.info(f"CREATED new Post Game Thread for {PostUtils.game_info(live_game)}")
+        logging.info(f"CREATED new Post Game Thread for {PostUtils.game_info(game)}")
 
-
-def get_upcoming_games(games):
-    upcoming_games = []
-    for game in games:
-        gameutc = parser.parse(game['gameTimeUTC']).astimezone(pytz.UTC)
-        time_to_game = (datetime.now(pytz.utc) - gameutc).seconds
-        if 0 < time_to_game < 30 * 60 and game["gameStatus"] == 1:
-            logging.debug(f"game is upcoming {game}")
-            upcoming_games.append(game)
-    return upcoming_games
-
-
-def get_orphan_posts(games, lemmy_posts):
-    orphan_posts = []
-    for post in lemmy_posts:
-        post_game_id = PostUtils.get_post_id(post)
-        found_games = [game for game in games if game["gameId"] == post_game_id]
-        if len(found_games) == 0:
-            orphan_posts.append(post)
-    return orphan_posts
+    def close_orphan_posts(self, games, lemmy_posts):
+        for post in lemmy_posts:
+            post_game_id = PostUtils.get_post_id(post)
+            found_games = [game for game in games if game["gameId"] == post_game_id]
+            if len(found_games) == 0:
+                logging.warning("Found an ORPHAN post, will close it")
+                while not self.lemmy.post.save(post_game_id, False):
+                    logging.warning("Failed to un-save post, will retry again in 2 seconds")
+                    time.sleep(2)
