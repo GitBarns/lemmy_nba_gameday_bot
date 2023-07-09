@@ -1,6 +1,6 @@
 from nba_api.live.nba.endpoints._base import Endpoint
 
-from nba.summerleague.SummerNBALiveHTTP import SummerNBALiveHTTP
+from nba.summerleague.summernbalivehttp import SummerNBALiveHTTP
 
 
 class SummerScoreBoard(Endpoint):

@@ -5,14 +5,14 @@ from logging.handlers import RotatingFileHandler
 
 import time
 
-from nba.nbathreadmaker import NBAMatchThreadMaker
+from nba.nbagamepostmaker import NBAGamePostMaker
 
 
 def run_post_maker(domain, community, username, password):
     try:
         logging.info("Starting thread maker")
         retry = 1
-        post_maker = NBAMatchThreadMaker(domain)
+        post_maker = NBAGamePostMaker(domain)
         logging.info(f"Logging into {domain}/c/{community}")
         while not post_maker.log_in(username, password, community) and retry < 10:
             retry += 1

@@ -1,9 +1,9 @@
 from nba_api.live.nba.endpoints._base import Endpoint
 
-from nba.summerleague.SummerNBALiveHTTP import SummerNBALiveHTTP
+from nba.summerleague.summernbalivehttp import SummerNBALiveHTTP
 
 
-class BoxScore(Endpoint):
+class SummerBoxScore(Endpoint):
     endpoint_url = 'boxscore/boxscore_{game_id}.json'
     expected_data = {
         'meta': {'version': 1, 'code': 200, 'request': 'http://nba.cloud/games/0022000180/boxscore?Format=json',

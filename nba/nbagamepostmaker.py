@@ -8,10 +8,10 @@ import time
 from dateutil import parser
 from pythorhead import Lemmy
 
-from nba.summerleague import SummerScoreBoard, SummerBoxScore
+from .summerleague import summerscoreboard, summerboxscore
 
 
-class NBAMatchThreadMaker:
+class NBAGamePostMaker:
     lemmy: Lemmy = None
     lfs = None
 
@@ -36,7 +36,7 @@ class NBAMatchThreadMaker:
         lemmy_gameposts = [gamepost for gamepost in lemmy_gameposts if not gamepost["post"]["deleted"]]
 
         # Today's Score Board
-        scorebox_games = SummerScoreBoard.SummerScoreBoard().games.get_dict()
+        scorebox_games = summerscoreboard.SummerScoreBoard().games.get_dict()
         [logging.debug(f"found game: {game}") for game in scorebox_games]
 
         upcoming_games = get_upcoming_games(scorebox_games)
@@ -92,7 +92,7 @@ class NBAMatchThreadMaker:
                 logging.warning(f"Found a LIVE game without a thread, will create it for {live_game}")
                 post_id = self.create_new_game_thread(live_game)
             logging.info(f"UPDATE Post for {live_game}")
-            bs = SummerBoxScore.BoxScore(game_id=live_game["gameId"]).get_dict()['game']
+            bs = summerboxscore.SummerBoxScore(game_id=live_game["gameId"]).get_dict()['game']
             self.update_game_thread(bs, live_game, post_id, False)
 
     def update_game_thread(self, bs, live_game, post_id, final):
@@ -110,7 +110,7 @@ class NBAMatchThreadMaker:
                 if game["gameId"] == lemmy_game_id:
                     post_id = lemmy_game["post"]["id"]
             if post_id:
-                bs = SummerBoxScore.BoxScore(game_id=game['gameId']).get_dict()['game']
+                bs = summerboxscore.SummerBoxScore(game_id=game['gameId']).get_dict()['game']
                 self.close_game(bs, game, post_id)
 
     def close_game(self, game, post_id, bs=None):
@@ -121,11 +121,11 @@ class NBAMatchThreadMaker:
         while not self.lemmy.post.save(post_id, False):
             logging.warning("Failed to un-save post, will retry again in 2 seconds")
             time.sleep(2)
-        self.create_PGT(bs, game)
+        self.create_pgt(bs, game)
 
-    def create_PGT(self, boxscore, livegame):
+    def create_pgt(self, boxscore, livegame):
         logging.info(f"CREATE New Post Game Thread: {livegame}")
-        name = get_PGT_title(livegame)
+        name = get_pgt_title(livegame)
         body = get_game_body(boxscore, livegame)
         while not self.lemmy.post.create(community_id=self.community_id, name=name, body=body, language_id=37):
             logging.warning("Failed to create PGT, will retry again in 2 seconds")
@@ -237,7 +237,7 @@ def get_thread_title(game):
     return name
 
 
-def get_PGT_title(game):
+def get_pgt_title(game):
     verb = random.choice(['defeat', 'win over', 'overcome', 'beat'])
     winner = (game['homeTeam'] if game['homeTeam']['score'] > game['awayTeam']['score'] else game['awayTeam'])
     loser = (game['homeTeam'] if game['homeTeam']['score'] < game['awayTeam']['score'] else game['awayTeam'])
