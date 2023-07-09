@@ -42,7 +42,7 @@ def main():
         level=(logging.DEBUG if args.verbose > 0 else logging.INFO),
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            RotatingFileHandler('lmt_bot.log', maxBytes=100000, backupCount=10),
+            RotatingFileHandler('logs/bot.log', maxBytes=10 * 1000 * 1000, backupCount=10),
             logging.StreamHandler()
         ]
     )
