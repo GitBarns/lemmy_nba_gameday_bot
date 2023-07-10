@@ -10,13 +10,9 @@ from nba.nbagamepostmaker import NBAGamePostMaker
 def run_post_maker(domain, community, username, password, is_summer_league, admin_id):
     try:
         logging.info("Starting post maker")
-        retry = 1
         post_maker = NBAGamePostMaker(domain, username, password, community, is_summer_league, admin_id)
         logging.info(f"Logging into {domain}/c/{community}")
-        while not post_maker.log_in() and retry < 10:
-            retry += 1
-            logging.warning(f"Failed to login, will retry in {retry * 5} secs, try #{retry}")
-            time.sleep(5 * retry)
+        post_maker.log_in()
         logging.info(f"Logged into {domain}/c/{community}, will begin processing games")
         post_maker.process_posts()
     except Exception:

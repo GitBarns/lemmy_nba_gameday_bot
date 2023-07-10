@@ -1,5 +1,4 @@
 import logging
-import time
 from datetime import datetime
 
 import pytz
@@ -24,15 +23,11 @@ class NBAGamePostMaker:
         self.lemmy = Lemmy(api_base_url)
 
     def log_in(self):
-        if not self.lemmy.log_in(self.user_name, self.password):
-            return False
+        PostUtils.safe_api_call(self.lemmy.log_in, username_or_email=self.user_name, password=self.password)
 
-        if not (community := self.lemmy.community.get(name=self.community_name)):
-            logging.error(f"Failed to fine Community {self.community_name}")
-            return False
-        else:
-            self.community_id = community["community_view"]["community"]["id"]
-            logging.debug(f"community is {self.community_id}:{community}")
+        community = PostUtils.safe_api_call(self.lemmy.community.get, name=self.community_name)
+        self.community_id = community["community_view"]["community"]["id"]
+        logging.debug(f"community is {self.community_id}:{community}")
 
         return True
 
@@ -48,8 +43,8 @@ class NBAGamePostMaker:
                 logging.exception("Failed to send a DM, oh well...")
 
     def process_posts_inner(self):
-        lemmy_posts = self.lemmy.post.list(community_id=self.community_id, saved_only="true",
-                                           type_=ListingType.Subscribed)
+        lemmy_posts = PostUtils.safe_api_call(self.lemmy.post.list, community_id=self.community_id, saved_only="true",
+                                              type_=ListingType.Subscribed)
         lemmy_posts = [post['post'] for post in lemmy_posts if not post["post"]["deleted"]]
         [logging.info(f"Found a game post in {self.community_name} : {post['name']}") for post in lemmy_posts]
 
@@ -85,7 +80,7 @@ class NBAGamePostMaker:
         for upcoming_game in upcoming_games:
             post_id = None
             for gamepost in lemmy_posts:
-                lemmy_game_id = PostUtils.get_post_id(gamepost)
+                lemmy_game_id = PostUtils.get_post_game_id(gamepost)
                 if upcoming_game["gameId"] == lemmy_game_id:
                     post_id = gamepost["id"]
             if not post_id:
@@ -95,16 +90,12 @@ class NBAGamePostMaker:
         logging.info(f"CREATE a new game post: {PostUtils.game_info(game)}")
         name = MarkupUtils.get_thread_title(game, False, self.is_summer_league)
         body = MarkupUtils.get_live_game_body(game)
-        while not (response := self.lemmy.post.create(community_id=self.community_id, name=name, body=body,
-                                                      language_id=37)):
-            logging.warning("Failed to create post, will retry again in 2 seconds")
-            time.sleep(2)
+        response = PostUtils.safe_api_call(self.lemmy.post.create, community_id=self.community_id, name=name, body=body,
+                                           language_id=37)
         post_id = response["post_view"]["post"]["id"]
         logging.info(f"CREATED Post ID {post_id}")
 
-        while not self.lemmy.post.save(post_id, True):
-            logging.warning("Failed to save post, will retry again in 2 seconds")
-            time.sleep(2)
+        PostUtils.safe_api_call(self.lemmy.post.save, post_id=post_id, saved=True)
         logging.info(f"SAVED Post ID {post_id}, good to go!")
         return post_id
 
@@ -112,12 +103,11 @@ class NBAGamePostMaker:
         for live_game in live_games:
             post_id = None
             for lemmy_game in lemmy_games:
-                lemmy_game_id = PostUtils.get_post_id(lemmy_game)
+                lemmy_game_id = PostUtils.get_post_game_id(lemmy_game)
                 if live_game["gameId"] == lemmy_game_id:
                     post_id = lemmy_game["post"]["id"]
             if not post_id:
-                logging.warning(
-                    f"Found a LIVE game without a thread, will create it for {PostUtils.game_info(live_game)}")
+                logging.warning(f"Found a LIVE game without a thread, will create: {PostUtils.game_info(live_game)}")
                 post_id = self.create_new_game_thread(live_game)
             logging.info(f"UPDATE Post for {PostUtils.game_info(live_game)}")
             self.update_game_thread(live_game, post_id, False)
@@ -125,27 +115,19 @@ class NBAGamePostMaker:
     def update_game_thread(self, live_game, post_id, final):
         name = MarkupUtils.get_thread_title(live_game, final, self.is_summer_league)
         body = MarkupUtils.get_live_game_body(live_game)
-        while not self.lemmy.post.edit(post_id=post_id, body=body, name=name):
-            logging.warning("Failed to update post, will retry again in 2 seconds")
-            time.sleep(2)
+        PostUtils.safe_api_call(self.lemmy.post.edit, post_id=post_id, body=body, name=name)
 
     def close_finished_games(self, finished_games, lemmy_games):
         for game in finished_games:
-            post_id = None
             for lemmy_game in lemmy_games:
-                lemmy_game_id = PostUtils.get_post_id(lemmy_game)
-                if game["gameId"] == lemmy_game_id:
-                    post_id = lemmy_game["post"]["id"]
-            if post_id:
-                self.close_game(post_id, game)
+                if game["gameId"] == PostUtils.get_post_game_id(lemmy_game):
+                    self.close_game(game['gameId'], game)
 
     def close_game(self, post_id, game):
         logging.info(f"FINAL UPDATE - for Post ID {post_id} ")
         self.update_game_thread(game, post_id, True)
         logging.info(f"CLOSE Post ID {post_id} ")
-        while not self.lemmy.post.save(post_id, False):
-            logging.warning("Failed to un-save post, will retry again in 2 seconds")
-            time.sleep(2)
+        PostUtils.safe_api_call(self.lemmy.post.save, post_id=post_id, saved=False)
         self.create_pgt(game)
 
     def create_pgt(self, game):
@@ -154,20 +136,14 @@ class NBAGamePostMaker:
             game_id=game["gameId"]) if self.is_summer_league else boxscore.BoxScore(game_id=game["gameId"])
         name = MarkupUtils.get_pgt_title(game)
         body = MarkupUtils.get_game_body(box_score.get_dict()['game'], game)
-        while not self.lemmy.post.create(community_id=self.community_id, name=name, body=body, language_id=37):
-            logging.warning("Failed to create PGT, will retry again in 2 seconds")
-            time.sleep(2)
+        PostUtils.safe_api_call(self.lemmy.post.create, community_id=self.community_id, name=name, body=body, language_id=37)
         logging.info(f"CREATED new Post Game Thread for {PostUtils.game_info(game)}")
 
     def close_orphan_posts(self, games, lemmy_posts):
         for post in lemmy_posts:
-            post_game_id = PostUtils.get_post_id(post)
+            post_game_id = PostUtils.get_post_game_id(post)
             found_games = [game for game in games if game["gameId"] == post_game_id]
             if len(found_games) == 0:
                 logging.warning(f"Found an ORPHAN post, will close it - {post['id']}:{post['name']}")
-                while not self.lemmy.post.edit(post_id=post['id'], name=post['name'] + " [CLOSED]"):
-                    logging.warning("Failed to update post, will retry again in 2 seconds")
-                    time.sleep(2)
-                while not self.lemmy.post.save(post_id=post['id'], saved=False):
-                    logging.warning("Failed to un-save post, will retry again in 2 seconds")
-                    time.sleep(2)
+                PostUtils.safe_api_call(self.lemmy.post.edit, post_id=post['id'], name=post['name'] + " [CLOSED]")
+                PostUtils.safe_api_call(self.lemmy.post.save, post_id=post['id'], saved=False)
