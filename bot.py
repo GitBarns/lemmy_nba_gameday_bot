@@ -7,11 +7,11 @@ from logging.handlers import RotatingFileHandler
 from nba.nbagamepostmaker import NBAGamePostMaker
 
 
-def run_post_maker(domain, community, username, password, is_summer_league):
+def run_post_maker(domain, community, username, password, is_summer_league, admin_id):
     try:
         logging.info("Starting post maker")
         retry = 1
-        post_maker = NBAGamePostMaker(domain, username, password, community, is_summer_league)
+        post_maker = NBAGamePostMaker(domain, username, password, community, is_summer_league, admin_id)
         logging.info(f"Logging into {domain}/c/{community}")
         while not post_maker.log_in() and retry < 10:
             retry += 1
@@ -32,6 +32,7 @@ def main():
     parser.add_argument("--password", default=os.environ.get("BOT_PASSWORD"))
     parser.add_argument("--community", default=os.environ.get("BOT_COMMUNITY"))
     parser.add_argument("--summer_league", default=os.environ.get("FORCE_SUMMER_LEAGUE"))
+    parser.add_argument("--admin_id", default=os.environ.get("BOT_ADMIN_ID"))
     parser.add_argument("--sleep", default=os.environ.get("BOT_SLEEP_SECS"))
     args = parser.parse_args()
     if not args.domain or not args.username or not args.password or not args.community:
@@ -49,7 +50,7 @@ def main():
     logging.info("Starting Up...")
 
     while True:
-        run_post_maker(args.domain, args.community, args.username, args.password, args.summer_league)
+        run_post_maker(args.domain, args.community, args.username, args.password, args.summer_league, args.admin_id)
         logging.info(f"Done processing match threads, will sleep for {args.sleep} seconds...")
         time.sleep(int(args.sleep))
 

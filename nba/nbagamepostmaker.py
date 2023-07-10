@@ -14,7 +14,8 @@ from .utils import PostUtils, MarkupUtils
 
 class NBAGamePostMaker:
 
-    def __init__(self, api_base_url, user_name, password, community_name, is_summer_league):
+    def __init__(self, api_base_url, user_name, password, community_name, is_summer_league, admin_id):
+        self.admin_id = admin_id
         self.community_name = community_name
         self.password = password
         self.user_name = user_name
@@ -36,6 +37,17 @@ class NBAGamePostMaker:
         return True
 
     def process_posts(self):
+        try:
+            self.process_posts_inner()
+        except Exception:
+            logging.exception("Failed to process match threads")
+            try:
+                self.lemmy.private_message.create(content="Failed to process game posts, go check logs",
+                                                  recipient_id=self.admin_id)
+            except Exception:
+                logging.exception("Failed to send a DM, oh well...")
+
+    def process_posts_inner(self):
         lemmy_posts = self.lemmy.post.list(community_id=self.community_id, saved_only="true",
                                            type_=ListingType.Subscribed)
         lemmy_posts = [post['post'] for post in lemmy_posts if not post["post"]["deleted"]]
