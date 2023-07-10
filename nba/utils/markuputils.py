@@ -42,6 +42,9 @@ class MarkupUtils:
     def get_footer(game_id):
         footer = f"^{datetime.now().strftime('%d-%m-%Y %H:%M:%S')} game id:{game_id}^"
         footer = f"::: spoiler bot info \n{footer.replace(':', chr(92) + ':').replace(' ', chr(92) + ' ')}\n:::"
+        footer = "This post was created by your friendly bot [@MatchThreadBot@lemmy.world](https://lemmy.world/u/MatchThreadBot)\n\n" \
+                 "Did I make a mistake? Have a suggestion? [send me a message here](https://lemmy.world/create_private_message/98250)\n" \
+                 f"{footer}"
         return footer
 
     @staticmethod
@@ -86,11 +89,16 @@ class MarkupUtils:
         return body
 
     @staticmethod
-    def get_thread_title(game):
-        title = f"GAME THREAD: {game['awayTeam']['teamCity']} {game['awayTeam']['teamName']} ({game['awayTeam']['wins']}:{game['awayTeam']['losses']})"
-        title = f"{title} @ {game['homeTeam']['teamCity']} {game['homeTeam']['teamName']} ({game['homeTeam']['wins']}:{game['homeTeam']['losses']})"
+    def get_thread_title(game, final, is_summer_league):
+        title = f"GAME THREAD: {game['homeTeam']['teamCity']} {game['homeTeam']['teamName']} ({game['homeTeam']['wins']}:{game['homeTeam']['losses']})" \
+                f" Vs. {game['awayTeam']['teamCity']} {game['awayTeam']['teamName']} ({game['awayTeam']['wins']}:{game['awayTeam']['losses']}) "
         game_time = parser.parse(timestr=game["gameTimeUTC"]).astimezone(pytz.timezone('US/Eastern'))
         title = f"{title} - {game_time.strftime('%a, %b %-d, %H:%M EST')}"
+        if is_summer_league:
+            title = f"{title} | Summer League"
+        if final:
+            title = f"{title} [Final Score  {game['homeTeam']['score']}:{game['awayTeam']['score']}]"
+
         logging.info("SET Post Title: " + title)
         return title
 

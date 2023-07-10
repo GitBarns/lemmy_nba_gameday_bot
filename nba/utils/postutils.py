@@ -2,7 +2,7 @@ class PostUtils:
 
     @staticmethod
     def get_post_id(gamepost):
-        return gamepost["post"]["body"][-15:-5]
+        return gamepost["body"][-15:-5]
 
     @staticmethod
     def game_info(game):

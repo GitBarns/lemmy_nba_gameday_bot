@@ -6,6 +6,7 @@ import pytz
 from dateutil import parser
 from nba_api.live.nba.endpoints import scoreboard, boxscore
 from pythorhead import Lemmy
+from pythorhead.types import ListingType
 
 from .summerleague import summerscoreboard, summerboxscore
 from .utils import PostUtils, MarkupUtils
@@ -35,8 +36,10 @@ class NBAGamePostMaker:
         return True
 
     def process_posts(self):
-        lemmy_posts = self.lemmy.post.list(community_id=self.community_id, saved_only="true")
-        lemmy_posts = [post for post in lemmy_posts if not post["post"]["deleted"]]
+        lemmy_posts = self.lemmy.post.list(community_id=self.community_id, saved_only="true",
+                                           type_=ListingType.Subscribed)
+        lemmy_posts = [post['post'] for post in lemmy_posts if not post["post"]["deleted"]]
+        [logging.info(f"Found a game post in {self.community_name} : {post['name']}") for post in lemmy_posts]
 
         # Today's Score Board
         scorebox_games = summerscoreboard.SummerScoreBoard().games.get_dict() if self.is_summer_league else scoreboard.ScoreBoard().games.get_dict()
@@ -72,13 +75,13 @@ class NBAGamePostMaker:
             for gamepost in lemmy_posts:
                 lemmy_game_id = PostUtils.get_post_id(gamepost)
                 if upcoming_game["gameId"] == lemmy_game_id:
-                    post_id = gamepost["post"]["id"]
+                    post_id = gamepost["id"]
             if not post_id:
                 self.create_new_game_thread(upcoming_game)
 
     def create_new_game_thread(self, game):
         logging.info(f"CREATE a new game post: {PostUtils.game_info(game)}")
-        name = MarkupUtils.get_thread_title(game)
+        name = MarkupUtils.get_thread_title(game, False, self.is_summer_league)
         body = MarkupUtils.get_live_game_body(game)
         while not (response := self.lemmy.post.create(community_id=self.community_id, name=name, body=body,
                                                       language_id=37)):
@@ -108,7 +111,7 @@ class NBAGamePostMaker:
             self.update_game_thread(live_game, post_id, False)
 
     def update_game_thread(self, live_game, post_id, final):
-        name = MarkupUtils.get_thread_title(live_game) + " [FINAL]" if final else None
+        name = MarkupUtils.get_thread_title(live_game, final, self.is_summer_league)
         body = MarkupUtils.get_live_game_body(live_game)
         while not self.lemmy.post.edit(post_id=post_id, body=body, name=name):
             logging.warning("Failed to update post, will retry again in 2 seconds")
@@ -149,7 +152,10 @@ class NBAGamePostMaker:
             post_game_id = PostUtils.get_post_id(post)
             found_games = [game for game in games if game["gameId"] == post_game_id]
             if len(found_games) == 0:
-                logging.warning("Found an ORPHAN post, will close it")
-                while not self.lemmy.post.save(post_game_id, False):
+                logging.warning(f"Found an ORPHAN post, will close it - {post['id']}:{post['name']}")
+                while not self.lemmy.post.edit(post_id=post['id'], name=post['name'] + " [CLOSED]"):
+                    logging.warning("Failed to update post, will retry again in 2 seconds")
+                    time.sleep(2)
+                while not self.lemmy.post.save(post_id=post['id'], saved=False):
                     logging.warning("Failed to un-save post, will retry again in 2 seconds")
                     time.sleep(2)
