@@ -36,11 +36,15 @@ class MarkupUtils:
         body = f"{body}\n|{game_time.strftime('%a, %b %-d, %H:%M EST')}|"
         body = f"{body}\n|{live_game['homeTeam']['teamName']} {live_game['homeTeam']['score']} : {live_game['awayTeam']['teamName']} {live_game['awayTeam']['score']}|\n"
 
-        if live_game['gameStatus'] > 1:
+        if live_game['gameStatus'] == 1:
+            body = f"{body}\n|Starting Soon|\n"
+        if live_game['gameStatus'] == 2:
             quarter = f"Q{live_game['period']}" if live_game['period'] <= 4 else f"OT{live_game['period'] - 4}"
             mins = re.split('PT(\d+)M(\d*)(.?\d*)', live_game['gameClock'])
             playtime = f"{mins[1]}:{mins[2]}"
             body = f"{body}\n|{quarter} {playtime}|\n"
+        if live_game['gameStatus'] == 3:
+            body = f"{body}\n|{live_game['gameStatusText']}|\n"
         return body
 
     @staticmethod
