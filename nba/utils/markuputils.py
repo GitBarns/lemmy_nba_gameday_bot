@@ -32,13 +32,15 @@ class MarkupUtils:
     @staticmethod
     def get_match_summary(live_game):
         game_time = parser.parse(timestr=live_game["gameTimeUTC"]).astimezone(pytz.timezone('US/Eastern'))
-        quarter = f"Q{live_game['period']}" if live_game['period'] <= 4 else f"OT{live_game['period'] - 4}"
-        mins = re.split('PT(\d+)M(\d*)(.?\d*)', live_game['gameClock'])
-        playtime = f"{mins[1]}:{mins[2]}"
-        body = f"|Match Summary|\n|:-:|"
+        body = f"|Match Summary `   (updated once a minute)`|\n|:-:|"
         body = f"{body}\n|{game_time.strftime('%a, %b %-d, %H:%M EST')}|"
-        body = f"{body}\n|{live_game['homeTeam']['teamName']} {live_game['homeTeam']['score']} : {live_game['awayTeam']['teamName']} {live_game['awayTeam']['score']}|"
-        body = f"{body}\n|{quarter} {playtime}|\n"
+        body = f"{body}\n|{live_game['homeTeam']['teamName']} {live_game['homeTeam']['score']} : {live_game['awayTeam']['teamName']} {live_game['awayTeam']['score']}|\n"
+
+        if live_game['gameStatus'] > 1:
+            quarter = f"Q{live_game['period']}" if live_game['period'] <= 4 else f"OT{live_game['period'] - 4}"
+            mins = re.split('PT(\d+)M(\d*)(.?\d*)', live_game['gameClock'])
+            playtime = f"{mins[1]}:{mins[2]}"
+            body = f"{body}\n|{quarter} {playtime}|\n"
         return body
 
     @staticmethod
@@ -52,7 +54,7 @@ class MarkupUtils:
 
     @staticmethod
     def get_game_quarter_summary(live_game):
-        title = "| TEAM | Q1 | Q2 | Q3 | Q4 | "
+        title = "| | Q1 | Q2 | Q3 | Q4 | "
         low_title = "| :--- | :---: | :---: | :---: | :---: | "
         home_team = f"| **{live_game['homeTeam']['teamCity']} {live_game['homeTeam']['teamName']}** | {live_game['homeTeam']['periods'][0]['score']} | {live_game['homeTeam']['periods'][1]['score']} | {live_game['homeTeam']['periods'][2]['score']} | {live_game['homeTeam']['periods'][3]['score']} |"
         away_team = f"| **{live_game['awayTeam']['teamCity']} {live_game['awayTeam']['teamName']}** | {live_game['awayTeam']['periods'][0]['score']} | {live_game['awayTeam']['periods'][1]['score']} | {live_game['awayTeam']['periods'][2]['score']} | {live_game['awayTeam']['periods'][3]['score']} | "
