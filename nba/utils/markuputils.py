@@ -32,18 +32,20 @@ class MarkupUtils:
     @staticmethod
     def get_match_summary(live_game):
         game_time = parser.parse(timestr=live_game["gameTimeUTC"]).astimezone(pytz.timezone('US/Eastern'))
+        quarter = f"Q{live_game['period']}" if live_game['period'] <= 4 else f"OT{live_game['period'] - 4}"
+        mins = re.split('PT(\d+)M(\d*)(.?\d*)', live_game['gameClock'])
+        playtime = f"{mins[1]}:{mins[2]}"
         body = f"|Match Summary|\n|:-:|"
         body = f"{body}\n|{game_time.strftime('%a, %b %-d, %H:%M EST')}|"
         body = f"{body}\n|{live_game['homeTeam']['teamName']} {live_game['homeTeam']['score']} : {live_game['awayTeam']['teamName']} {live_game['awayTeam']['score']}|"
-        body = f"{body}\n|{live_game['gameStatusText']}|\n"
+        body = f"{body}\n|{quarter} {playtime}|\n"
         return body
 
     @staticmethod
     def get_footer(game_id):
         footer = f"^{datetime.now().strftime('%d-%m-%Y %H:%M:%S')} game id:{game_id}^"
         footer = f"::: spoiler bot info \n{footer.replace(':', chr(92) + ':').replace(' ', chr(92) + ' ')}\n:::"
-        footer = "This post was created by your friendly bot [@MatchThreadBot@lemmy.world](https://lemmy.world/u/MatchThreadBot)\n\n" \
-                 "Did I make a mistake? Have a suggestion? [send me a message here](https://lemmy.world/create_private_message/98250)\n" \
+        footer = "This post was created by your friendly [Game Thread Maker bot](https://lemmy.world/u/MatchThreadBot). Did I make a mistake? Have a suggestion? [send me a message here]\n" \
                  f"{footer}"
         return footer
 

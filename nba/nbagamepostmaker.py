@@ -24,11 +24,9 @@ class NBAGamePostMaker:
 
     def log_in(self):
         PostUtils.safe_api_call(self.lemmy.log_in, username_or_email=self.user_name, password=self.password)
-
         community = PostUtils.safe_api_call(self.lemmy.community.get, name=self.community_name)
         self.community_id = community["community_view"]["community"]["id"]
         logging.debug(f"community is {self.community_id}:{community}")
-
         return True
 
     def process_posts(self):
@@ -36,11 +34,8 @@ class NBAGamePostMaker:
             self.process_posts_inner()
         except Exception:
             logging.exception("Failed to process match threads")
-            try:
-                self.lemmy.private_message.create(content="Failed to process game posts, go check logs",
-                                                  recipient_id=self.admin_id)
-            except Exception:
-                logging.exception("Failed to send a DM, oh well...")
+            self.lemmy.private_message.create(content="Failed to process game posts, go check logs",
+                                              recipient_id=int(self.admin_id))
 
     def process_posts_inner(self):
         lemmy_posts = PostUtils.safe_api_call(self.lemmy.post.list, community_id=self.community_id, saved_only="true",
@@ -136,7 +131,8 @@ class NBAGamePostMaker:
             game_id=game["gameId"]) if self.is_summer_league else boxscore.BoxScore(game_id=game["gameId"])
         name = MarkupUtils.get_pgt_title(game)
         body = MarkupUtils.get_game_body(box_score.get_dict()['game'], game)
-        PostUtils.safe_api_call(self.lemmy.post.create, community_id=self.community_id, name=name, body=body, language_id=37)
+        PostUtils.safe_api_call(self.lemmy.post.create, community_id=self.community_id, name=name, body=body,
+                                language_id=37)
         logging.info(f"CREATED new Post Game Thread for {PostUtils.game_info(game)}")
 
     def close_orphan_posts(self, games, lemmy_posts):
