@@ -17,7 +17,7 @@ class PostUtils:
         retries = 1
         while not (response := fun(**kwargs)) and retries < 10:
             retries += 1
-            logging.warning(f"Failed to call {fun}, will retry again in {retries * 5} seconds")
+            logging.warning(f"Failed to call {fun.__name__}({kwargs}), will retry again in {retries * 5} seconds")
             time.sleep(retries * 5)
 
         if retries >= 10:

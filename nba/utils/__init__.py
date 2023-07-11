@@ -1,6 +1,8 @@
 __all__ = [
     'markuputils',
-    'postutils'
+    'postutils',
+    'MarkupUtils',
+    'PostUtils'
 ]
 
 from .markuputils import MarkupUtils

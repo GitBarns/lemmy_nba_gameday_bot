@@ -37,9 +37,9 @@ def main():
     logging.root.handlers = []
     logging.basicConfig(
         level=(logging.DEBUG if args.verbose > 0 else logging.INFO),
-        format="%(asctime)s [%(levelname)s] %(message)s",
+        format="%(asctime)s  %(name)s :: %(levelname)s :: %(message)s",
         handlers=[
-            RotatingFileHandler('logs/bot.log', maxBytes=10 * 1000 * 1000, backupCount=10),
+            RotatingFileHandler('logs/nba_game_bot.log', maxBytes=10 * 1000 * 1000, backupCount=10),
             logging.StreamHandler()
         ]
     )
