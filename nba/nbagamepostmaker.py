@@ -92,20 +92,20 @@ class NBAGamePostMaker:
         body = MarkupUtils.get_live_game_body(game)
         response = PostUtils.safe_api_call(self.lemmy.post.create, community_id=self.community_id, name=name, body=body,
                                            language_id=37)
-        post_id = response["post_view"]["post"]["id"]
+        post_id = int(response["post_view"]["post"]["id"])
         logging.info(f"CREATED Post ID {post_id}")
 
         PostUtils.safe_api_call(self.lemmy.post.save, post_id=post_id, saved=True)
         logging.info(f"SAVED Post ID {post_id}, good to go!")
         return post_id
 
-    def update_live_threads(self, live_games, lemmy_games):
+    def update_live_threads(self, live_games, lemmy_posts):
         for live_game in live_games:
             post_id = None
-            for lemmy_game in lemmy_games:
-                lemmy_game_id = PostUtils.get_post_game_id(lemmy_game)
+            for post in lemmy_posts:
+                lemmy_game_id = PostUtils.get_post_game_id(post)
                 if live_game["gameId"] == lemmy_game_id:
-                    post_id = lemmy_game["post"]["id"]
+                    post_id = post["id"]
             if not post_id:
                 logging.warning(f"Found a LIVE game without a thread, will create: {PostUtils.game_info(live_game)}")
                 post_id = self.create_new_game_thread(live_game)
@@ -115,13 +115,13 @@ class NBAGamePostMaker:
     def update_game_thread(self, live_game, post_id, final):
         name = MarkupUtils.get_thread_title(live_game, final, self.is_summer_league)
         body = MarkupUtils.get_live_game_body(live_game)
-        PostUtils.safe_api_call(self.lemmy.post.edit, post_id=post_id, body=body, name=name)
+        PostUtils.safe_api_call(self.lemmy.post.edit, post_id=int(post_id), body=body, name=name)
 
-    def close_finished_games(self, finished_games, lemmy_games):
+    def close_finished_games(self, finished_games, lemmy_posts):
         for game in finished_games:
-            for lemmy_game in lemmy_games:
-                if game["gameId"] == PostUtils.get_post_game_id(lemmy_game):
-                    self.close_game(game['gameId'], game)
+            for post in lemmy_posts:
+                if game["gameId"] == PostUtils.get_post_game_id(post):
+                    self.close_game(post['id'], game)
 
     def close_game(self, post_id, game):
         logging.info(f"FINAL UPDATE - for Post ID {post_id} ")

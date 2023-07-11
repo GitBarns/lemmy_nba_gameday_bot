@@ -27,11 +27,11 @@ def main():
     parser.add_argument("--username", default=os.environ.get("BOT_USERNAME"))
     parser.add_argument("--password", default=os.environ.get("BOT_PASSWORD"))
     parser.add_argument("--community", default=os.environ.get("BOT_COMMUNITY"))
-    parser.add_argument("--summer_league", default=os.environ.get("FORCE_SUMMER_LEAGUE"))
     parser.add_argument("--admin_id", default=os.environ.get("BOT_ADMIN_ID"))
     parser.add_argument("--sleep", default=os.environ.get("BOT_SLEEP_SECS"))
+    parser.add_argument("--summer_league", default=os.environ.get("FORCE_SUMMER_LEAGUE"))
     args = parser.parse_args()
-    if not args.domain or not args.username or not args.password or not args.community:
+    if not args.domain or not args.username or not args.password or not args.community or not args.admin_id or not args.sleep:
         exit(parser.print_usage())
 
     logging.root.handlers = []
