@@ -32,7 +32,10 @@ class MarkupUtils:
     @staticmethod
     def get_match_summary(live_game):
         game_time = parser.parse(timestr=live_game["gameTimeUTC"]).astimezone(pytz.timezone('US/Eastern'))
-        body = f"|Match Summary `   (updated once a minute)`|\n|:-:|"
+        body = f"|Match Summary "
+        if live_game['gameStatus'] == 2:
+            body = f"{body}`   (updated once a minute)`"
+        body = f"{body}|\n|:-:|"
         body = f"{body}\n|{game_time.strftime('%a, %b %-d, %H:%M EST')}|"
         body = f"{body}\n|{live_game['homeTeam']['teamName']} {live_game['homeTeam']['score']} : {live_game['awayTeam']['teamName']} {live_game['awayTeam']['score']}|\n"
 
@@ -42,9 +45,9 @@ class MarkupUtils:
             quarter = f"Q{live_game['period']}" if live_game['period'] <= 4 else f"OT{live_game['period'] - 4}"
             mins = re.split('PT(\d+)M(\d*)(.?\d*)', live_game['gameClock'])
             playtime = f"{mins[1]}:{mins[2]}"
-            body = f"{body}\n|{quarter} {playtime}|\n"
+            body = f"{body}|{quarter} {playtime}|\n"
         if live_game['gameStatus'] == 3:
-            body = f"{body}\n|{live_game['gameStatusText']}|\n"
+            body = f"{body}|{live_game['gameStatusText']}|\n"
         return body
 
     @staticmethod
