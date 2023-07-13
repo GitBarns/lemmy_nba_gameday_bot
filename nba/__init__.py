@@ -1,6 +1,6 @@
 __all__ = [
-    'gamethreadmaker.py',
-    'dailyindexmaker.py',
+    'gamethreadmaker',
+    'dailyindexmaker',
     'GameThreadMaker',
     'DailyIndexMaker'
 ]
