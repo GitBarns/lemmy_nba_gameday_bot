@@ -2,14 +2,14 @@ import logging
 
 from nba_api.live.nba.endpoints import scoreboard, boxscore
 from pythorhead import Lemmy
-from pythorhead.types import ListingType
+from pythorhead.types import ListingType, LanguageType
 
 import nba
 from .summerleague import summerscoreboard, summerboxscore
 from .utils import PostUtils, MarkupUtils, GameUtils
 
 
-class NBAGamePostMaker:
+class GameThreadMaker:
     sent_pm_already: bool = False
 
     def __init__(self, api_base_url, user_name, password, community_name, is_summer_league, admin_id):
@@ -32,14 +32,14 @@ class NBAGamePostMaker:
         try:
             self.process_posts_inner()
 
-            nba.TodaysGamesPost.process_todays_games(self.lemmy, community_id=self.community_id,
+            nba.DailyIndexMaker.process_todays_games(self.lemmy, community_id=self.community_id,
                                                      is_summer_league=self.is_summer_league)
         except Exception:
             logging.exception("Failed to process match threads")
-            if not NBAGamePostMaker.sent_pm_already:
+            if not GameThreadMaker.sent_pm_already:
                 self.lemmy.private_message.create(content="Failed to process game posts, go check logs",
                                                   recipient_id=int(self.admin_id))
-                NBAGamePostMaker.sent_pm_already = True
+                GameThreadMaker.sent_pm_already = True
 
     def process_posts_inner(self):
         lemmy_posts = self.get_game_posts()
@@ -89,7 +89,7 @@ class NBAGamePostMaker:
         name = MarkupUtils.get_thread_title(game, False, self.is_summer_league)
         body = MarkupUtils.get_live_game_body(game)
         response = PostUtils.safe_api_call(self.lemmy.post.create, community_id=self.community_id, name=name, body=body,
-                                           language_id=37)
+                                           language_id=LanguageType.EN)
         post_id = int(response["post_view"]["post"]["id"])
         logging.info(f"CREATED Post ID {post_id}")
 
@@ -135,7 +135,7 @@ class NBAGamePostMaker:
         name = MarkupUtils.get_pgt_title(game)
         body = MarkupUtils.get_game_body(box_score.get_dict()['game'], game)
         PostUtils.safe_api_call(self.lemmy.post.create, community_id=self.community_id, name=name, body=body,
-                                language_id=37)
+                                language_id=LanguageType.EN)
         logging.info(f"CREATED new Post Game Thread for {PostUtils.game_info(game)}")
 
     def close_orphan_posts(self, games, lemmy_posts):

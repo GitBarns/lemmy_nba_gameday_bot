@@ -36,5 +36,13 @@ class GameUtils:
             return game['gameStatusText']
 
     @staticmethod
-    def get_game_score(live_game):
-        return f"{live_game['homeTeam']['score']} : {live_game['awayTeam']['score']}"
+    def get_home_team(game):
+        return f"{game['homeTeam']['teamCity']} {game['homeTeam']['teamName']}"
+
+    @staticmethod
+    def get_away_team(game):
+        return f"{game['awayTeam']['teamCity']} {game['awayTeam']['teamName']}"
+
+    @staticmethod
+    def get_game_score(game):
+        return f"{game['homeTeam']['score']} : {game['awayTeam']['score']}"

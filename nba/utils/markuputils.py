@@ -49,22 +49,22 @@ class MarkupUtils:
         return footer
 
     @staticmethod
-    def get_game_quarter_summary(live_game):
+    def get_game_quarter_summary(game):
         title = "| | Q1 | Q2 | Q3 | Q4 | "
         low_title = "| :--- | :---: | :---: | :---: | :---: | "
-        home_team = f"| **{live_game['homeTeam']['teamCity']} {live_game['homeTeam']['teamName']}** | {live_game['homeTeam']['periods'][0]['score']} | {live_game['homeTeam']['periods'][1]['score']} | {live_game['homeTeam']['periods'][2]['score']} | {live_game['homeTeam']['periods'][3]['score']} |"
-        away_team = f"| **{live_game['awayTeam']['teamCity']} {live_game['awayTeam']['teamName']}** | {live_game['awayTeam']['periods'][0]['score']} | {live_game['awayTeam']['periods'][1]['score']} | {live_game['awayTeam']['periods'][2]['score']} | {live_game['awayTeam']['periods'][3]['score']} | "
-        if len(live_game['homeTeam']['periods']) > 4:
-            for ot in range(4, len(live_game['homeTeam']['periods'])):
+        home_team = f"| **{GameUtils.get_home_team(game)}** | {game['homeTeam']['periods'][0]['score']} | {game['homeTeam']['periods'][1]['score']} | {game['homeTeam']['periods'][2]['score']} | {game['homeTeam']['periods'][3]['score']} |"
+        away_team = f"| **{GameUtils.get_away_team(game)}** | {game['awayTeam']['periods'][0]['score']} | {game['awayTeam']['periods'][1]['score']} | {game['awayTeam']['periods'][2]['score']} | {game['awayTeam']['periods'][3]['score']} | "
+        if len(game['homeTeam']['periods']) > 4:
+            for ot in range(4, len(game['homeTeam']['periods'])):
                 title = f"{title}OT{ot - 3} | "
                 low_title = f"{low_title}:---: | "
-                home_team = f"{home_team}{live_game['homeTeam']['periods'][ot]['score']} | "
-                away_team = f"{away_team}{live_game['awayTeam']['periods'][ot]['score']} | "
-        if live_game["gameStatus"] == 3:
+                home_team = f"{home_team}{game['homeTeam']['periods'][ot]['score']} | "
+                away_team = f"{away_team}{game['awayTeam']['periods'][ot]['score']} | "
+        if game["gameStatus"] == 3:
             title = f"{title}FINAL | "
             low_title = f"{low_title}:---: | "
-            home_team = f"{home_team}**{live_game['homeTeam']['score']}** | "
-            away_team = f"{away_team}**{live_game['awayTeam']['score']}** | "
+            home_team = f"{home_team}**{game['homeTeam']['score']}** | "
+            away_team = f"{away_team}**{game['awayTeam']['score']}** | "
         body = f"\n---\n{title}\n{low_title}\n{home_team}\n{away_team}\n"
         return body
 

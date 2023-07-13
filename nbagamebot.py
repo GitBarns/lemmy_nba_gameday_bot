@@ -4,13 +4,13 @@ import os
 import time
 from logging.handlers import RotatingFileHandler
 
-from nba.nbagamepostmaker import NBAGamePostMaker
+from nba.gamethreadmaker import GameThreadMaker
 
 
 def run_post_maker(domain, community, username, password, is_summer_league, admin_id):
     try:
         logging.info("Starting post maker")
-        post_maker = NBAGamePostMaker(domain, username, password, community, is_summer_league, admin_id)
+        post_maker = GameThreadMaker(domain, username, password, community, is_summer_league, admin_id)
         logging.info(f"Logging into {domain}/c/{community}")
         post_maker.log_in()
         logging.info(f"Logged into {domain}/c/{community}, will begin processing games")

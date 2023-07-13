@@ -1,9 +1,9 @@
 __all__ = [
-    'nbagamepostmaker',
-    'todaysgamespost',
-    'NBAGamePostMaker',
-    'TodaysGamesPost'
+    'gamethreadmaker.py',
+    'dailyindexmaker.py',
+    'GameThreadMaker',
+    'DailyIndexMaker'
 ]
 
-from .nbagamepostmaker import NBAGamePostMaker
-from .todaysgamespost import TodaysGamesPost
+from .gamethreadmaker import GameThreadMaker
+from .dailyindexmaker import DailyIndexMaker

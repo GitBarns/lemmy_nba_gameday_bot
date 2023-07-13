@@ -62,7 +62,7 @@ def update_daily_games_post(lemmy, cur_scoreboard, post_id, posts):
     PostUtils.safe_api_call(lemmy.post.edit, post_id=int(post_id), body=body)
 
 
-class TodaysGamesPost:
+class DailyIndexMaker:
 
     @staticmethod
     def process_todays_games(lemmy: Lemmy = None, community_id=None, is_summer_league=False):
@@ -81,5 +81,3 @@ class TodaysGamesPost:
 
         logging.info(f"Will now update the daily games post: {post_id}")
         update_daily_games_post(lemmy, cur_scoreboard, post_id, all_posts)
-        # body = get_daily_games_body(todaygames)
-        # PostUtils.safe_api_call(lemmy.post.create, community_id=community_id, name=name, language_id=37)
