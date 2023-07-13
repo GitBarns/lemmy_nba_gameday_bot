@@ -68,9 +68,8 @@ class DailyIndexMaker:
     def process_todays_games(lemmy: Lemmy = None, community_id=None, is_summer_league=False):
         cur_scoreboard = summerscoreboard.SummerScoreBoard() if is_summer_league else scoreboard.ScoreBoard()
         all_posts = PostUtils.get_posts_deep(lemmy=lemmy, community_id=community_id)
-        daily_posts = [post for post in all_posts if
-                       (not post["deleted"]) and str(post['name']).startswith(
-                           "DAILY DISCUSSION + GAME THREAD INDEX")]
+        daily_posts = [post for post in all_posts if str(post['name']).startswith(
+                           "DAILY DISCUSSION + GAME THREAD INDEX") and post['featured_community']]
         if len(daily_posts) > 1:
             raise RuntimeError(f"Found two Todays Games posts, now what? {daily_posts}")
         if len(daily_posts) == 1:

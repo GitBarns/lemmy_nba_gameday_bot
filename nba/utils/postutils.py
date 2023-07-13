@@ -44,7 +44,7 @@ class PostUtils:
 
             # ugly hack since there are very few saved pages....
             if saved_only:
-                posts.extend([post['post'] for post in response if post['saved']])
+                posts.extend([post['post'] for post in response if not post['post']["deleted"] and post['saved']])
             else:
-                posts.extend([post['post'] for post in response])
+                posts.extend([post['post'] for post in response if not post['post']["deleted"]])
         return posts

@@ -31,7 +31,6 @@ class GameThreadMaker:
     def process_posts(self):
         try:
             self.process_posts_inner()
-
             nba.DailyIndexMaker.process_todays_games(self.lemmy, community_id=self.community_id,
                                                      is_summer_league=self.is_summer_league)
         except Exception:
@@ -69,8 +68,7 @@ class GameThreadMaker:
         lemmy_posts = PostUtils.get_posts_deep(self.lemmy, community_id=self.community_id, saved_only=True,
                                                type_=ListingType.Subscribed)
         # remove all posts that are deleted and are game threads
-        lemmy_posts = [post for post in lemmy_posts if
-                       not post["deleted"] and str(post['name']).startswith("GAME THREAD")]
+        lemmy_posts = [post for post in lemmy_posts if str(post['name']).startswith("GAME THREAD")]
         [logging.info(f"Found a game post in {self.community_name} : {post['name']}") for post in lemmy_posts]
         return lemmy_posts
 
