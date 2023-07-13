@@ -42,18 +42,13 @@ class NBAGamePostMaker:
                 NBAGamePostMaker.sent_pm_already = True
 
     def process_posts_inner(self):
-        # get all posts by the bot that are saved ( = active)
-        lemmy_posts = PostUtils.get_posts_deep(self.lemmy, community_id=self.community_id, saved_only=True,
-                                               type_=ListingType.Subscribed)
-
-        # remove all posts that are deleted and are game threads
-        lemmy_posts = [post for post in lemmy_posts if
-                       not post["deleted"] and str(post['name']).startswith("GAME THREAD")]
-        [logging.info(f"Found a game post in {self.community_name} : {post['name']}") for post in lemmy_posts]
+        lemmy_posts = self.get_game_posts()
 
         # Today's Score Board
         scorebox_games = summerscoreboard.SummerScoreBoard().games.get_dict() if self.is_summer_league else scoreboard.ScoreBoard().games.get_dict()
         [logging.info(f"Found a game in today's scorebox: {PostUtils.game_info(game)}") for game in scorebox_games]
+        # scorebox_games = [game for game in scorebox_games if game['gameId'] == "1522300042"]
+        # MarkupUtils.get_live_game_body(scorebox_games[0])
 
         upcoming_games = [game for game in scorebox_games if GameUtils.get_game_status(game) == GameUtils.STARTING_SOON]
         [logging.info(f"Found an upcoming game: {PostUtils.game_info(game)}") for game in upcoming_games]
@@ -68,6 +63,16 @@ class NBAGamePostMaker:
         self.close_finished_games(finished_games, lemmy_posts)
 
         self.close_orphan_posts(scorebox_games, lemmy_posts)
+
+    def get_game_posts(self):
+        # get all posts by the bot that are saved ( = active)
+        lemmy_posts = PostUtils.get_posts_deep(self.lemmy, community_id=self.community_id, saved_only=True,
+                                               type_=ListingType.Subscribed)
+        # remove all posts that are deleted and are game threads
+        lemmy_posts = [post for post in lemmy_posts if
+                       not post["deleted"] and str(post['name']).startswith("GAME THREAD")]
+        [logging.info(f"Found a game post in {self.community_name} : {post['name']}") for post in lemmy_posts]
+        return lemmy_posts
 
     def create_new_game_posts(self, upcoming_games, lemmy_posts):
         for upcoming_game in upcoming_games:

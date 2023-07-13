@@ -55,8 +55,8 @@ class MarkupUtils:
         home_team = f"| **{live_game['homeTeam']['teamCity']} {live_game['homeTeam']['teamName']}** | {live_game['homeTeam']['periods'][0]['score']} | {live_game['homeTeam']['periods'][1]['score']} | {live_game['homeTeam']['periods'][2]['score']} | {live_game['homeTeam']['periods'][3]['score']} |"
         away_team = f"| **{live_game['awayTeam']['teamCity']} {live_game['awayTeam']['teamName']}** | {live_game['awayTeam']['periods'][0]['score']} | {live_game['awayTeam']['periods'][1]['score']} | {live_game['awayTeam']['periods'][2]['score']} | {live_game['awayTeam']['periods'][3]['score']} | "
         if len(live_game['homeTeam']['periods']) > 4:
-            for ot in range(5, len(live_game['homeTeam']['periods'])):
-                title = f"{title}OT{ot - 4} | "
+            for ot in range(4, len(live_game['homeTeam']['periods'])):
+                title = f"{title}OT{ot - 3} | "
                 low_title = f"{low_title}:---: | "
                 home_team = f"{home_team}{live_game['homeTeam']['periods'][ot]['score']} | "
                 away_team = f"{away_team}{live_game['awayTeam']['periods'][ot]['score']} | "
