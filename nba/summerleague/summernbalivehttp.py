@@ -1,6 +1,5 @@
 from nba_api.library import http
 
-
 try:
     from nba_api.library.debug.debug import STATS_HEADERS
 except ImportError:
@@ -16,7 +15,6 @@ except ImportError:
 
 
 class SummerNBALiveHTTP(http.NBAHTTP):
-
     nba_response = http.NBAResponse
     base_url = 'https://cdn.nba.com/static/json/VEGAS/liveData/{endpoint}'
     headers = STATS_HEADERS

@@ -3,8 +3,7 @@ import random
 import re
 from datetime import datetime
 
-import pytz
-from dateutil import parser
+from nba.utils import GameUtils
 
 
 class MarkupUtils:
@@ -31,23 +30,13 @@ class MarkupUtils:
 
     @staticmethod
     def get_match_summary(live_game):
-        game_time = parser.parse(timestr=live_game["gameTimeUTC"]).astimezone(pytz.timezone('US/Eastern'))
         body = f"|Match Summary "
         if live_game['gameStatus'] == 2:
             body = f"{body}`   (updated once a minute)`"
         body = f"{body}|\n|:-:|"
-        body = f"{body}\n|{game_time.strftime('%a, %b %-d, %H:%M EST')}|"
-        body = f"{body}\n|{live_game['homeTeam']['teamName']} {live_game['homeTeam']['score']} : {live_game['awayTeam']['teamName']} {live_game['awayTeam']['score']}|\n"
-
-        if live_game['gameStatus'] == 1:
-            body = f"{body}\n|Starting Soon|\n"
-        if live_game['gameStatus'] == 2:
-            quarter = f"Q{live_game['period']}" if live_game['period'] <= 4 else f"OT{live_game['period'] - 4}"
-            mins = re.split('PT(\d+)M(\d*)(.?\d*)', live_game['gameClock'])
-            playtime = f"{mins[1]}:{mins[2]}"
-            body = f"{body}|{quarter} {playtime}|\n"
-        if live_game['gameStatus'] == 3:
-            body = f"{body}|{live_game['gameStatusText']}|\n"
+        body = f"{body}\n|{GameUtils.get_game_datetime_est(live_game)}|"
+        body = f"{body}\n|{GameUtils.get_game_score(live_game)}|\n"
+        body = f"{body}|{GameUtils.get_game_status(live_game)}|\n"
         return body
 
     @staticmethod
@@ -66,7 +55,7 @@ class MarkupUtils:
         home_team = f"| **{live_game['homeTeam']['teamCity']} {live_game['homeTeam']['teamName']}** | {live_game['homeTeam']['periods'][0]['score']} | {live_game['homeTeam']['periods'][1]['score']} | {live_game['homeTeam']['periods'][2]['score']} | {live_game['homeTeam']['periods'][3]['score']} |"
         away_team = f"| **{live_game['awayTeam']['teamCity']} {live_game['awayTeam']['teamName']}** | {live_game['awayTeam']['periods'][0]['score']} | {live_game['awayTeam']['periods'][1]['score']} | {live_game['awayTeam']['periods'][2]['score']} | {live_game['awayTeam']['periods'][3]['score']} | "
         if len(live_game['homeTeam']['periods']) > 4:
-            for ot in range(4, len(live_game['homeTeam']['periods'])):
+            for ot in range(5, len(live_game['homeTeam']['periods'])):
                 title = f"{title}OT{ot - 4} | "
                 low_title = f"{low_title}:---: | "
                 home_team = f"{home_team}{live_game['homeTeam']['periods'][ot]['score']} | "
@@ -104,8 +93,7 @@ class MarkupUtils:
     def get_thread_title(game, final, is_summer_league):
         title = f"GAME THREAD: {game['homeTeam']['teamCity']} {game['homeTeam']['teamName']} ({game['homeTeam']['wins']}:{game['homeTeam']['losses']})" \
                 f" Vs. {game['awayTeam']['teamCity']} {game['awayTeam']['teamName']} ({game['awayTeam']['wins']}:{game['awayTeam']['losses']}) "
-        game_time = parser.parse(timestr=game["gameTimeUTC"]).astimezone(pytz.timezone('US/Eastern'))
-        title = f"{title} - {game_time.strftime('%a, %b %-d, %H:%M EST')}"
+        title = f"{title} - {GameUtils.get_game_datetime_est(game)}"
         if is_summer_league:
             title = f"{title} | Summer League"
         if final:

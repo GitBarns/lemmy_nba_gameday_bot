@@ -1,17 +1,16 @@
 import logging
-from datetime import datetime
 
-import pytz
-from dateutil import parser
 from nba_api.live.nba.endpoints import scoreboard, boxscore
 from pythorhead import Lemmy
 from pythorhead.types import ListingType
 
+import nba
 from .summerleague import summerscoreboard, summerboxscore
-from .utils import PostUtils, MarkupUtils
+from .utils import PostUtils, MarkupUtils, GameUtils
 
 
 class NBAGamePostMaker:
+    sent_pm_already: bool = False
 
     def __init__(self, api_base_url, user_name, password, community_name, is_summer_league, admin_id):
         self.admin_id = admin_id
@@ -32,23 +31,32 @@ class NBAGamePostMaker:
     def process_posts(self):
         try:
             self.process_posts_inner()
+
+            nba.TodaysGamesPost.process_todays_games(self.lemmy, community_id=self.community_id,
+                                                     is_summer_league=self.is_summer_league)
         except Exception:
             logging.exception("Failed to process match threads")
-            self.lemmy.private_message.create(content="Failed to process game posts, go check logs",
-                                              recipient_id=int(self.admin_id))
+            if not NBAGamePostMaker.sent_pm_already:
+                self.lemmy.private_message.create(content="Failed to process game posts, go check logs",
+                                                  recipient_id=int(self.admin_id))
+                NBAGamePostMaker.sent_pm_already = True
 
     def process_posts_inner(self):
-        lemmy_posts = PostUtils.safe_api_call(self.lemmy.post.list, community_id=self.community_id, saved_only="true",
-                                              type_=ListingType.Subscribed)
-        lemmy_posts = [post['post'] for post in lemmy_posts if not post["post"]["deleted"]]
+        # get all posts by the bot that are saved ( = active)
+        lemmy_posts = PostUtils.get_posts_deep(self.lemmy, community_id=self.community_id, saved_only=True,
+                                               type_=ListingType.Subscribed)
+
+        # remove all posts that are deleted and are game threads
+        lemmy_posts = [post for post in lemmy_posts if
+                       not post["deleted"] and str(post['name']).startswith("GAME THREAD")]
         [logging.info(f"Found a game post in {self.community_name} : {post['name']}") for post in lemmy_posts]
 
         # Today's Score Board
         scorebox_games = summerscoreboard.SummerScoreBoard().games.get_dict() if self.is_summer_league else scoreboard.ScoreBoard().games.get_dict()
         [logging.info(f"Found a game in today's scorebox: {PostUtils.game_info(game)}") for game in scorebox_games]
 
-        upcoming_games = self.get_upcoming_games(scorebox_games)
-        [logging.info(f"Found an  upcoming game: {PostUtils.game_info(game)}") for game in upcoming_games]
+        upcoming_games = [game for game in scorebox_games if GameUtils.get_game_status(game) == GameUtils.STARTING_SOON]
+        [logging.info(f"Found an upcoming game: {PostUtils.game_info(game)}") for game in upcoming_games]
         self.create_new_game_posts(upcoming_games, lemmy_posts)
 
         live_games = [game for game in scorebox_games if game["gameStatus"] == 2]
@@ -60,16 +68,6 @@ class NBAGamePostMaker:
         self.close_finished_games(finished_games, lemmy_posts)
 
         self.close_orphan_posts(scorebox_games, lemmy_posts)
-
-    def get_upcoming_games(self, games):
-        upcoming_games = []
-        for game in games:
-            gameutc = parser.parse(game['gameTimeUTC']).astimezone(pytz.UTC)
-            time_to_game = (datetime.now(pytz.utc) - gameutc).seconds
-            if 0 < time_to_game < 30 * 60 and game["gameStatus"] == 1:
-                logging.debug(f"game is upcoming {game}")
-                upcoming_games.append(game)
-        return upcoming_games
 
     def create_new_game_posts(self, upcoming_games, lemmy_posts):
         for upcoming_game in upcoming_games:
