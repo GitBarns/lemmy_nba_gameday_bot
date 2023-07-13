@@ -48,9 +48,9 @@ def update_daily_games_post(lemmy, cur_scoreboard, post_id, posts):
         post_game_post = find_game_post("POST GAME THREAD", game['gameId'], posts)
         status = GameUtils.get_game_status(game)
         if game_post:
-            logging.info(f"Will add GAME POST: {game_post}")
+            logging.debug(f"Will add GAME POST: {game_post}")
         if post_game_post:
-            logging.info(f"Will add POST GAME POST: {post_game_post}")
+            logging.debug(f"Will add POST GAME POST: {post_game_post}")
         body = f"{body}\n" \
                f" | {game_time}" \
                f" | {home}" \
