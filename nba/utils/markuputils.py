@@ -43,8 +43,8 @@ class MarkupUtils:
     def get_footer(game_id):
         footer = f"^{datetime.now().strftime('%d-%m-%Y %H:%M:%S')} game id:{game_id}^"
         footer = f"::: spoiler bot info \n{footer.replace(':', chr(92) + ':').replace(' ', chr(92) + ' ')}\n:::"
-        footer = "This post was created by your friendly [Game Thread Maker bot](https://lemmy.world/u/MatchThreadBot). " \
-                 "Did I make a mistake? Have a suggestion? [send me a message here](https://lemmy.world/create_private_message/98250)\n" \
+        footer = "This post was created by your friendly [NBA Bot](https://lemmy.world/u/MatchThreadBot). " \
+                 "Did I make a mistake? Have a suggestion? [PM here](https://lemmy.world/create_private_message/98250)\n" \
                  f"{footer}"
         return footer
 

@@ -1,8 +1,10 @@
 import logging
+from datetime import datetime
 
 from nba_api.live.nba.endpoints import scoreboard
 from pythorhead import Lemmy
-from pythorhead.types import LanguageType, FeatureType
+from pythorhead.types import FeatureType
+from pytz import timezone
 
 from nba.summerleague import summerscoreboard
 from nba.utils import PostUtils, GameUtils
@@ -10,7 +12,7 @@ from nba.utils import PostUtils, GameUtils
 
 def close_yesterdays_post(lemmy, post, cur_scoreboard):
     post_date = (post['name']).split('[')[1].split("]")[0]
-    cur_date = cur_scoreboard.score_board_date
+    cur_date = datetime.now(timezone('EST')).strftime("%Y-%m-%d") #cur_scoreboard.score_board_date
     if post_date != cur_date:
         logging.info(f"Daily Thread dates are different {post_date}:{cur_date}, will close the old one")
         PostUtils.safe_api_call(lemmy.post.feature, post_id=post['id'], feature=False,
@@ -20,8 +22,7 @@ def close_yesterdays_post(lemmy, post, cur_scoreboard):
 
 def new_daily_post(lemmy, cur_scoreboard, community_id):
     name = f"DAILY DISCUSSION + GAME THREAD INDEX [{cur_scoreboard.score_board_date}]"
-    response = PostUtils.safe_api_call(lemmy.post.create, community_id=community_id, name=name,
-                                       language_id=LanguageType.EN)
+    response = PostUtils.safe_api_call(lemmy.post.create, community_id=community_id, name=name)
     post_id = int(response["post_view"]["post"]["id"])
     logging.info(f"CREATED new Post {post_id}")
     PostUtils.safe_api_call(lemmy.post.feature, post_id=post_id, feature=True, feature_type=FeatureType.Community)

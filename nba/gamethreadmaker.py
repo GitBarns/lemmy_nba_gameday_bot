@@ -2,7 +2,7 @@ import logging
 
 from nba_api.live.nba.endpoints import scoreboard, boxscore
 from pythorhead import Lemmy
-from pythorhead.types import ListingType, LanguageType
+from pythorhead.types import ListingType
 
 import nba
 from .summerleague import summerscoreboard, summerboxscore
@@ -86,8 +86,7 @@ class GameThreadMaker:
         logging.info(f"CREATE a new game post: {PostUtils.game_info(game)}")
         name = MarkupUtils.get_thread_title(game, False, self.is_summer_league)
         body = MarkupUtils.get_live_game_body(game)
-        response = PostUtils.safe_api_call(self.lemmy.post.create, community_id=self.community_id, name=name, body=body,
-                                           language_id=LanguageType.EN)
+        response = PostUtils.safe_api_call(self.lemmy.post.create, community_id=self.community_id, name=name, body=body)
         post_id = int(response["post_view"]["post"]["id"])
         logging.info(f"CREATED Post ID {post_id}")
 
@@ -132,8 +131,7 @@ class GameThreadMaker:
             game_id=game["gameId"]) if self.is_summer_league else boxscore.BoxScore(game_id=game["gameId"])
         name = MarkupUtils.get_pgt_title(game)
         body = MarkupUtils.get_game_body(box_score.get_dict()['game'], game)
-        PostUtils.safe_api_call(self.lemmy.post.create, community_id=self.community_id, name=name, body=body,
-                                language_id=LanguageType.EN)
+        PostUtils.safe_api_call(self.lemmy.post.create, community_id=self.community_id, name=name, body=body)
         logging.info(f"CREATED new Post Game Thread for {PostUtils.game_info(game)}")
 
     def close_orphan_posts(self, games, lemmy_posts):

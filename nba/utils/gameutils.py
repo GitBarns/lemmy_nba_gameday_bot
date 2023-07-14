@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime
 
@@ -23,8 +24,10 @@ class GameUtils:
     def get_game_status(game):
         if game['gameStatus'] == 1:
             gameutc = parser.parse(game['gameTimeUTC']).astimezone(pytz.UTC)
-            time_to_game = (datetime.now(pytz.utc) - gameutc).seconds
-            if 0 < time_to_game < 15 * 60:
+            time_to_game = (gameutc - datetime.now(pytz.utc)).total_seconds()
+            logging.info(
+                f"Upcoming game starts at {gameutc}, its now {datetime.now(pytz.utc)}, seconds diff :{time_to_game}")
+            if time_to_game < 15 * 60:
                 return GameUtils.STARTING_SOON
             else:
                 return GameUtils.NOT_STARTED
