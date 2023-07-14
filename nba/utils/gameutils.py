@@ -25,8 +25,7 @@ class GameUtils:
         if game['gameStatus'] == 1:
             gameutc = parser.parse(game['gameTimeUTC']).astimezone(pytz.UTC)
             time_to_game = (gameutc - datetime.now(pytz.utc)).total_seconds()
-            logging.info(
-                f"Upcoming game starts at {gameutc}, its now {datetime.now(pytz.utc)}, seconds diff :{time_to_game}")
+            logging.debug(f"Game starts at {gameutc}, its now {datetime.now(pytz.utc)}, diff :{time_to_game}")
             if time_to_game < 15 * 60:
                 return GameUtils.STARTING_SOON
             else:

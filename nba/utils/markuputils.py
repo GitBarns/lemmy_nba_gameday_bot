@@ -44,7 +44,7 @@ class MarkupUtils:
         footer = f"^{datetime.now().strftime('%d-%m-%Y %H:%M:%S')} game id:{game_id}^"
         footer = f"::: spoiler bot info \n{footer.replace(':', chr(92) + ':').replace(' ', chr(92) + ' ')}\n:::"
         footer = "This post was created by your friendly [NBA Bot](https://lemmy.world/u/MatchThreadBot). " \
-                 "Did I make a mistake? Have a suggestion? [PM here](https://lemmy.world/create_private_message/98250)\n" \
+                 "Did I make a mistake? Have a suggestion? [PM me here](https://lemmy.world/create_private_message/98250)\n" \
                  f"{footer}"
         return footer
 
@@ -70,7 +70,7 @@ class MarkupUtils:
 
     @staticmethod
     def get_single_team_body(home_away, game, live_game):
-        body = f"\n**{game[home_away]['teamCity']} {game[home_away]['teamName']} ({live_game[home_away]['wins']}:{live_game[home_away]['losses']})**"
+        body = f"\n**{game[home_away]['teamCity']} {game[home_away]['teamName']} ({live_game[home_away]['wins']}-{live_game[home_away]['losses']})**"
         body = f"{body}\n| PLAYER | MIN | FG | FT | 3PT | REB | AST | STL | BLK | TO | PTS | +/- |"
         body = f"{body}\n| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |"
         for player in game[home_away]['players']:
@@ -91,8 +91,8 @@ class MarkupUtils:
 
     @staticmethod
     def get_thread_title(game, final, is_summer_league):
-        title = f"GAME THREAD: {game['homeTeam']['teamCity']} {game['homeTeam']['teamName']} ({game['homeTeam']['wins']}:{game['homeTeam']['losses']})" \
-                f" Vs. {game['awayTeam']['teamCity']} {game['awayTeam']['teamName']} ({game['awayTeam']['wins']}:{game['awayTeam']['losses']}) "
+        title = f"GAME THREAD: {game['homeTeam']['teamCity']} {game['homeTeam']['teamName']} ({game['homeTeam']['wins']}-{game['homeTeam']['losses']})" \
+                f" Vs. {game['awayTeam']['teamCity']} {game['awayTeam']['teamName']} ({game['awayTeam']['wins']}-{game['awayTeam']['losses']}) "
         title = f"{title} - {GameUtils.get_game_datetime_est(game)}"
         if is_summer_league:
             title = f"{title} | Summer League"
