@@ -1,15 +1,17 @@
 __all__ = [
+    'templateutils',
     'gameutils',
     'markuputils',
     'postutils',
-    'templateutils',
+    'TemplateUtils',
     'GameUtils',
     'MarkupUtils',
-    'PostUtils',
-    'TemplateUtils'
+    'PostUtils'
 ]
 
 from .gameutils import GameUtils
-from .markuputils import MarkupUtils
 from .postutils import PostUtils
 from .templateutils import TemplateUtils
+from .markuputils import MarkupUtils
+
+

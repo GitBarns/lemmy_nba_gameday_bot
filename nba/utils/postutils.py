@@ -5,16 +5,23 @@ from typing import Optional
 from pythorhead import Lemmy
 from pythorhead.types import SortType, ListingType
 
+from nba.utils import GameUtils
+
 
 class PostUtils:
 
+    POST_GAME_PREFIX = "[Post Game Thread] "
+    GAME_THREAD_PREFIX = "[Game Thread] "
+    DAILY_INDEX_PREFIX = "Daily Discussion + Game Thread Index "
+
     @staticmethod
     def get_post_game_id(gamepost):
-        return gamepost["body"][-15:-5]
+        return gamepost["body"][-16:-6]
 
     @staticmethod
     def game_info(game):
-        return f"{game['gameId']}: {game['gameStatusText']} - {game['homeTeam']['teamName']} vs {game['awayTeam']['teamName']}"
+        return f"{game['gameId']}: {game['gameStatusText']} [{GameUtils.get_game_status(game)}] - " \
+               f"{game['homeTeam']['teamName']} vs {game['awayTeam']['teamName']}"
 
     @staticmethod
     def safe_api_call(fun, **kwargs):

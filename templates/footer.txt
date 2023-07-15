@@ -2,5 +2,5 @@ This post was created by your friendly [NBA Bot](https://lemmy.world/u/MatchThre
 Did I make a mistake? Have a suggestion? [PM me here](https://lemmy.world/create_private_message/98250)
 
 ::: spoiler bot info
-^$footer_time\ ^gameid:^$game_id
+^$footer_time\ game\ id\:\ $game_id^
 :::

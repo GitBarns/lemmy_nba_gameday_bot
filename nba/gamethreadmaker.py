@@ -46,8 +46,6 @@ class GameThreadMaker:
         # Today's Score Board
         scorebox_games = summerscoreboard.SummerScoreBoard().games.get_dict() if self.is_summer_league else scoreboard.ScoreBoard().games.get_dict()
         [logging.info(f"Found a game in today's scorebox: {PostUtils.game_info(game)}") for game in scorebox_games]
-        # scorebox_games = [game for game in scorebox_games if game['gameId'] == "1522300042"]
-        # MarkupUtils.get_live_game_body(scorebox_games[0])
 
         upcoming_games = [game for game in scorebox_games if GameUtils.get_game_status(game) == GameUtils.STARTING_SOON]
         [logging.info(f"Found an upcoming game: {PostUtils.game_info(game)}") for game in upcoming_games]
@@ -68,7 +66,7 @@ class GameThreadMaker:
         lemmy_posts = PostUtils.get_posts_deep(self.lemmy, community_id=self.community_id, saved_only=True,
                                                type_=ListingType.Subscribed)
         # remove all posts that are deleted and are game threads
-        lemmy_posts = [post for post in lemmy_posts if str(post['name']).startswith("GAME THREAD")]
+        lemmy_posts = [post for post in lemmy_posts if str(post['name']).startswith(PostUtils.GAME_THREAD_PREFIX)]
         [logging.info(f"Found a game post in {self.community_name} : {post['name']}") for post in lemmy_posts]
         return lemmy_posts
 

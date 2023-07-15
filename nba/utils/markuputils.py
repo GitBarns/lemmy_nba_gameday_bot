@@ -3,7 +3,7 @@ import random
 import re
 from datetime import datetime
 
-from nba.utils import GameUtils, TemplateUtils
+from nba.utils import GameUtils, TemplateUtils, PostUtils
 
 
 class MarkupUtils:
@@ -41,29 +41,15 @@ class MarkupUtils:
                 'status': GameUtils.get_game_status(live_game)
             }
         )
-        # body = f"|Match Summary "
-        # if live_game['gameStatus'] == 2:
-        #     body = f"{body}`   (updated once a minute)`"
-        # body = f"{body}|\n|:-:|"
-        # body = f"{body}\n|{GameUtils.get_game_datetime_est(live_game)}|"
-        # body = f"{body}\n|{GameUtils.get_game_score(live_game)}|\n"
-        # body = f"{body}|{GameUtils.get_game_status(live_game)}|\n"
-        # return body
 
     @staticmethod
     def get_footer(game_id):
         return TemplateUtils.format(
             MarkupUtils.FOOTER,
             {
-                'footer_time': datetime.now().strftime('%d-%m-%Y %H-%M-%S'),
+                'footer_time': datetime.now().strftime('%d-%m-%Y--%H-%M-%S'),
                 'game_id': game_id
             })
-        # footer = f"^{datetime.now().strftime('%d-%m-%Y %H:%M:%S')} game id:{game_id}^"
-        # footer = f"::: spoiler bot info \n{footer.replace(':', chr(92) + ':').replace(' ', chr(92) + ' ')}\n:::"
-        # footer = "This post was created by your friendly [NBA Bot](https://lemmy.world/u/MatchThreadBot). " \
-        #          "Did I make a mistake? Have a suggestion? [PM me here](https://lemmy.world/create_private_message/98250)\n" \
-        #          f"{footer}"
-        # return footer
 
     @staticmethod
     def get_game_quarter_summary(game):
@@ -108,7 +94,7 @@ class MarkupUtils:
 
     @staticmethod
     def get_thread_title(game, final, is_summer_league):
-        title = f"GAME THREAD: {game['homeTeam']['teamCity']} {game['homeTeam']['teamName']} ({game['homeTeam']['wins']}-{game['homeTeam']['losses']})" \
+        title = f"{PostUtils.GAME_THREAD_PREFIX}{game['homeTeam']['teamCity']} {game['homeTeam']['teamName']} ({game['homeTeam']['wins']}-{game['homeTeam']['losses']})" \
                 f" Vs. {game['awayTeam']['teamCity']} {game['awayTeam']['teamName']} ({game['awayTeam']['wins']}-{game['awayTeam']['losses']}) "
         title = f"{title} - {GameUtils.get_game_datetime_est(game)}"
         if is_summer_league:
@@ -129,7 +115,7 @@ class MarkupUtils:
             verb = random.choice(['barely make it against', 'win over'])
         elif margin > 15:
             verb = random.choice(['crush', 'destroy', 'demolish', 'defeat', 'win over', 'overcome', 'beat'])
-        name = f"POST GAME THREAD: The {winner['teamCity']} {winner['teamName']} ({winner['wins']}:{winner['losses']})" \
+        name = f"{PostUtils.POST_GAME_PREFIX}The {winner['teamCity']} {winner['teamName']} ({winner['wins']}:{winner['losses']})" \
                f" {verb} the {loser['teamCity']} {loser['teamName']} ({loser['wins']}:{loser['losses']}), {winner['score']}-{loser['score']}"
         logging.info(f"SET Post Game Thread Title: {name}")
         return name
