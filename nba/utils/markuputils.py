@@ -3,10 +3,12 @@ import random
 import re
 from datetime import datetime
 
-from nba.utils import GameUtils
+from nba.utils import GameUtils, TemplateUtils
 
 
 class MarkupUtils:
+    FOOTER = "templates/footer.txt"
+    MATCH_SUMMARY_FILE = "templates/match_summary.txt"
 
     @staticmethod
     def get_live_game_body(live_game):
@@ -30,23 +32,38 @@ class MarkupUtils:
 
     @staticmethod
     def get_match_summary(live_game):
-        body = f"|Match Summary "
-        if live_game['gameStatus'] == 2:
-            body = f"{body}`   (updated once a minute)`"
-        body = f"{body}|\n|:-:|"
-        body = f"{body}\n|{GameUtils.get_game_datetime_est(live_game)}|"
-        body = f"{body}\n|{GameUtils.get_game_score(live_game)}|\n"
-        body = f"{body}|{GameUtils.get_game_status(live_game)}|\n"
-        return body
+        return TemplateUtils.format(
+            MarkupUtils.MATCH_SUMMARY_FILE,
+            {
+                'updated': ("`   (updated once a minute) `" if live_game['gameStatus'] == 2 else ""),
+                'game_time': GameUtils.get_game_datetime_est(live_game),
+                'score': GameUtils.get_game_score(live_game),
+                'status': GameUtils.get_game_status(live_game)
+            }
+        )
+        # body = f"|Match Summary "
+        # if live_game['gameStatus'] == 2:
+        #     body = f"{body}`   (updated once a minute)`"
+        # body = f"{body}|\n|:-:|"
+        # body = f"{body}\n|{GameUtils.get_game_datetime_est(live_game)}|"
+        # body = f"{body}\n|{GameUtils.get_game_score(live_game)}|\n"
+        # body = f"{body}|{GameUtils.get_game_status(live_game)}|\n"
+        # return body
 
     @staticmethod
     def get_footer(game_id):
-        footer = f"^{datetime.now().strftime('%d-%m-%Y %H:%M:%S')} game id:{game_id}^"
-        footer = f"::: spoiler bot info \n{footer.replace(':', chr(92) + ':').replace(' ', chr(92) + ' ')}\n:::"
-        footer = "This post was created by your friendly [NBA Bot](https://lemmy.world/u/MatchThreadBot). " \
-                 "Did I make a mistake? Have a suggestion? [PM me here](https://lemmy.world/create_private_message/98250)\n" \
-                 f"{footer}"
-        return footer
+        return TemplateUtils.format(
+            MarkupUtils.FOOTER,
+            {
+                'footer_time': datetime.now().strftime('%d-%m-%Y %H-%M-%S'),
+                'game_id': game_id
+            })
+        # footer = f"^{datetime.now().strftime('%d-%m-%Y %H:%M:%S')} game id:{game_id}^"
+        # footer = f"::: spoiler bot info \n{footer.replace(':', chr(92) + ':').replace(' ', chr(92) + ' ')}\n:::"
+        # footer = "This post was created by your friendly [NBA Bot](https://lemmy.world/u/MatchThreadBot). " \
+        #          "Did I make a mistake? Have a suggestion? [PM me here](https://lemmy.world/create_private_message/98250)\n" \
+        #          f"{footer}"
+        # return footer
 
     @staticmethod
     def get_game_quarter_summary(game):
