@@ -115,7 +115,7 @@ class MarkupUtils:
             verb = random.choice(['barely make it against', 'win over'])
         elif margin > 15:
             verb = random.choice(['crush', 'destroy', 'demolish', 'defeat', 'win over', 'overcome', 'beat'])
-        name = f"{PostUtils.POST_GAME_PREFIX}The {winner['teamCity']} {winner['teamName']} ({winner['wins']}:{winner['losses']})" \
-               f" {verb} the {loser['teamCity']} {loser['teamName']} ({loser['wins']}:{loser['losses']}), {winner['score']}-{loser['score']}"
+        name = f"{PostUtils.POST_GAME_PREFIX}The {winner['teamCity']} {winner['teamName']} ({winner['wins']}-{winner['losses']})" \
+               f" {verb} the {loser['teamCity']} {loser['teamName']} ({loser['wins']}-{loser['losses']}), {winner['score']}:{loser['score']}"
         logging.info(f"SET Post Game Thread Title: {name}")
         return name

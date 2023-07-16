@@ -14,7 +14,7 @@ def run_post_maker(domain, community, username, password, is_summer_league, admi
         logging.info(f"Logging into {domain}/c/{community}")
         post_maker.log_in()
         logging.info(f"Logged into {domain}/c/{community}, will begin processing games")
-        post_maker.process_posts()
+        post_maker.run()
     except Exception:
         logging.exception("Failed to process match threads")
 
@@ -43,7 +43,7 @@ def main():
             logging.StreamHandler()
         ]
     )
-    logging.info("Starting Up...")
+    logging.info("Starting up the Bot...")
 
     while True:
         run_post_maker(args.domain, args.community, args.username, args.password, args.summer_league, args.admin_id)

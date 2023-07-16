@@ -26,51 +26,54 @@ class GameThreadMaker:
         community = PostUtils.safe_api_call(self.lemmy.community.get, name=self.community_name)
         self.community_id = community["community_view"]["community"]["id"]
         logging.debug(f"community is {self.community_id}:{community}")
-        return True
 
-    def process_posts(self):
+    def run(self):
         try:
-            self.process_posts_inner()
-            nba.DailyIndexMaker.process_todays_games(self.lemmy, community_id=self.community_id,
-                                                     is_summer_league=self.is_summer_league)
+            self.process_game_threads()
+            nba.DailyIndexMaker.run(self.lemmy, community_id=self.community_id, is_summer_league=self.is_summer_league)
         except Exception:
-            logging.exception("Failed to process match threads")
+            logging.exception("Failed to run")
             if not GameThreadMaker.sent_pm_already:
                 self.lemmy.private_message.create(content="Failed to process game posts, go check logs",
                                                   recipient_id=int(self.admin_id))
                 GameThreadMaker.sent_pm_already = True
 
-    def process_posts_inner(self):
-        lemmy_posts = self.get_game_posts()
+    def process_game_threads(self):
+        active_lemmy_game_threads = self.get_lemmy_game_threads()
 
         # Today's Score Board
-        scorebox_games = summerscoreboard.SummerScoreBoard().games.get_dict() if self.is_summer_league else scoreboard.ScoreBoard().games.get_dict()
-        [logging.info(f"Found a game in today's scorebox: {PostUtils.game_info(game)}") for game in scorebox_games]
+        board = summerscoreboard.SummerScoreBoard() if self.is_summer_league else scoreboard.ScoreBoard()
+        scorebox_games = board.games.get_dict()
+        [logging.debug(f"Found a game in today's scorebox: {PostUtils.game_info(game)}") for game in scorebox_games]
 
         upcoming_games = [game for game in scorebox_games if GameUtils.get_game_status(game) == GameUtils.STARTING_SOON]
         [logging.info(f"Found an upcoming game: {PostUtils.game_info(game)}") for game in upcoming_games]
-        self.create_new_game_posts(upcoming_games, lemmy_posts)
+        self.create_upcoming_game_threads(upcoming_games, active_lemmy_game_threads)
 
         live_games = [game for game in scorebox_games if game["gameStatus"] == 2]
         [logging.info(f"Found a live game: {PostUtils.game_info(game)}") for game in live_games]
-        self.update_live_threads(live_games, lemmy_posts)
+        self.update_live_threads(live_games, active_lemmy_game_threads)
 
+        # Get all finished games, compare them to current ongoing game threads (upcoming + playing)
+        # if the same game is in both groups - close the game thread  with a final update and open a post game thread with detailed stats
         finished_games = [game for game in scorebox_games if game["gameStatus"] == 3]
         [logging.info(f"Found a finished game: {PostUtils.game_info(game)}") for game in finished_games]
-        self.close_finished_games(finished_games, lemmy_posts)
+        self.close_finished_games(finished_games, active_lemmy_game_threads)
 
-        self.close_orphan_posts(scorebox_games, lemmy_posts)
+        # go through all active lemmy game threads and find them in today's scorebox
+        # if any aren't found in the scorebox for some reason (day switch?) - close them just in case
+        self.close_orphan_posts(scorebox_games, active_lemmy_game_threads)
 
-    def get_game_posts(self):
-        # get all posts by the bot that are saved ( = active)
-        lemmy_posts = PostUtils.get_posts_deep(self.lemmy, community_id=self.community_id, saved_only=True,
-                                               type_=ListingType.Subscribed)
-        # remove all posts that are deleted and are game threads
+    def get_lemmy_game_threads(self):
+        # get all posts by the bot that are saved (i.e. active)
+        lemmy_posts = PostUtils.get_last50_posts(self.lemmy, community_id=self.community_id, saved_only=True,
+                                                 type_=ListingType.Subscribed)
+        # filter out ones that aren't GT or PGT
         lemmy_posts = [post for post in lemmy_posts if str(post['name']).startswith(PostUtils.GAME_THREAD_PREFIX)]
         [logging.info(f"Found a game post in {self.community_name} : {post['name']}") for post in lemmy_posts]
         return lemmy_posts
 
-    def create_new_game_posts(self, upcoming_games, lemmy_posts):
+    def create_upcoming_game_threads(self, upcoming_games, lemmy_posts):
         for upcoming_game in upcoming_games:
             post_id = None
             for gamepost in lemmy_posts:
@@ -114,14 +117,12 @@ class GameThreadMaker:
         for game in finished_games:
             for post in lemmy_posts:
                 if game["gameId"] == PostUtils.get_post_game_id(post):
-                    self.close_game(post['id'], game)
-
-    def close_game(self, post_id, game):
-        logging.info(f"FINAL UPDATE - for Post ID {post_id} ")
-        self.update_game_thread(game, post_id, True)
-        logging.info(f"CLOSE Post ID {post_id} ")
-        PostUtils.safe_api_call(self.lemmy.post.save, post_id=post_id, saved=False)
-        self.create_pgt(game)
+                    logging.info(f"FINAL UPDATE - for Post ID {post['id']} - {PostUtils.game_info(game)}")
+                    self.update_game_thread(game, post['id'], True)
+                    logging.info(f"CLOSE Post ID {post['id']} - {PostUtils.game_info(game)} ")
+                    PostUtils.safe_api_call(self.lemmy.post.save, post_id=post['id'], saved=False)
+                    logging.info(f"UN-SAVED Post ID {post['id']} - {PostUtils.game_info(game)} ")
+                    self.create_pgt(game)
 
     def create_pgt(self, game):
         logging.info(f"CREATE New Post Game Thread: {PostUtils.game_info(game)}")

@@ -1,18 +1,16 @@
 import logging
-from datetime import datetime
 
 from nba_api.live.nba.endpoints import scoreboard
 from pythorhead import Lemmy
 from pythorhead.types import FeatureType
-from pytz import timezone
 
 from nba.summerleague import summerscoreboard
 from nba.utils import PostUtils, GameUtils
 
 
-def close_yesterdays_post(lemmy, post):
+def close_yesterdays_post(lemmy, post, cur_scoreboard):
     post_date = (post['name']).split('[')[1].split("]")[0]
-    cur_date = datetime.now(timezone('EST')).strftime("%Y-%m-%d")
+    cur_date = cur_scoreboard.score_board_date
     if post_date != cur_date:
         logging.info(f"Daily Thread dates are different {post_date}:{cur_date}, will close the old one")
         PostUtils.safe_api_call(lemmy.post.feature, post_id=post['id'], feature=False,
@@ -63,25 +61,29 @@ def update_daily_games_post(lemmy, cur_scoreboard, post_id, posts):
     PostUtils.safe_api_call(lemmy.post.edit, post_id=int(post_id), body=body)
 
 
-def get_todays_post_id(daily_posts):
+def get_todays_post_id(daily_posts, cur_scoreboard):
     for post in daily_posts:
         post_date = (post['name']).split('[')[1].split("]")[0]
-        if post_date == datetime.now(timezone('EST')).strftime("%Y-%m-%d"):
+        if post_date == cur_scoreboard.score_board_date:
             return post['id']
 
 
 class DailyIndexMaker:
     @staticmethod
-    def process_todays_games(lemmy: Lemmy = None, community_id=None, is_summer_league=False):
+    def run(lemmy: Lemmy = None, community_id=None, is_summer_league=False):
         cur_scoreboard = summerscoreboard.SummerScoreBoard() if is_summer_league else scoreboard.ScoreBoard()
-        all_posts = PostUtils.get_posts_deep(lemmy=lemmy, community_id=community_id)
+        all_posts = PostUtils.get_last50_posts(lemmy=lemmy, community_id=community_id)
         daily_posts = [post for post in all_posts if
                        str(post['name']).startswith(PostUtils.DAILY_INDEX_PREFIX) and post[
                            'featured_community'] is True]
 
         if len(daily_posts) >= 1:
-            [close_yesterdays_post(lemmy, post) for post in daily_posts]
-            post_id = get_todays_post_id(daily_posts)
+            # Delete the sticky posts that aren't today's - there really should be only one
+            # try to find today, if it doesn't exist - create one
+            [close_yesterdays_post(lemmy, post, cur_scoreboard) for post in daily_posts]
+            if (post_id := get_todays_post_id(daily_posts, cur_scoreboard)) is None:
+                # really should happen only when there's one post (yesterday) and no new one
+                post_id = new_daily_post(lemmy, cur_scoreboard, community_id)
         else:
             post_id = new_daily_post(lemmy, cur_scoreboard, community_id)
 

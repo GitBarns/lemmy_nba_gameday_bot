@@ -5,5 +5,5 @@ __all__ = [
     'DailyIndexMaker'
 ]
 
-from .gamethreadmaker import GameThreadMaker
 from .dailyindexmaker import DailyIndexMaker
+from .gamethreadmaker import GameThreadMaker

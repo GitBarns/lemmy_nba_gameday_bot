@@ -9,7 +9,6 @@ from nba.utils import GameUtils
 
 
 class PostUtils:
-
     POST_GAME_PREFIX = "[Post Game Thread] "
     GAME_THREAD_PREFIX = "[Game Thread] "
     DAILY_INDEX_PREFIX = "Daily Discussion + Game Thread Index "
@@ -37,11 +36,11 @@ class PostUtils:
             return response
 
     @staticmethod
-    def get_posts_deep(lemmy: Lemmy, community_id: Optional[int] = None,
-                       community_name: Optional[str] = None,
-                       saved_only: Optional[bool] = None,
-                       sort: Optional[SortType] = None,
-                       type_: Optional[ListingType] = None):
+    def get_last50_posts(lemmy: Lemmy, community_id: Optional[int] = None,
+                         community_name: Optional[str] = None,
+                         saved_only: Optional[bool] = None,
+                         sort: Optional[SortType] = None,
+                         type_: Optional[ListingType] = None):
         posts = []
         for i in range(1, 6):
             response = PostUtils.safe_api_call(lemmy.post.list, community_id=community_id,
