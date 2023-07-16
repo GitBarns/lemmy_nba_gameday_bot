@@ -13,16 +13,22 @@ class GameThreadMaker:
     sent_pm_already: bool = False
 
     def __init__(self, api_base_url, user_name, password, community_name, is_summer_league, admin_id):
+        self.lemmy = None
+        self.api_base_url = api_base_url
         self.admin_id = admin_id
         self.community_name = community_name
         self.password = password
         self.user_name = user_name
         self.community_id = None
         self.is_summer_league = is_summer_league
-        self.lemmy = Lemmy(api_base_url)
 
     def log_in(self):
-        PostUtils.safe_api_call(self.lemmy.log_in, username_or_email=self.user_name, password=self.password)
+        self.lemmy = Lemmy(self.api_base_url)
+        if self.lemmy.nodeinfo is None:
+            raise RuntimeError(
+                f"Failed to connect to Lemmy instance {self.api_base_url}, leaving...")
+        if not PostUtils.safe_api_call(self.lemmy.log_in, username_or_email=self.user_name, password=self.password):
+            raise RuntimeError("Failed to log into the Lemmy instance, please verify your bot credentials")
         community = PostUtils.safe_api_call(self.lemmy.community.get, name=self.community_name)
         self.community_id = community["community_view"]["community"]["id"]
         logging.debug(f"community is {self.community_id}:{community}")
