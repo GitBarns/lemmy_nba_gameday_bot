@@ -36,6 +36,7 @@ class GameThreadMaker:
     def run(self):
         try:
             self.process_game_threads()
+            logging.info("Will process Daily Index Thread")
             nba.DailyIndexMaker.run(self.lemmy, community_id=self.community_id, is_summer_league=self.is_summer_league)
         except Exception:
             logging.exception("Failed to run")

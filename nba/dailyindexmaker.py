@@ -15,17 +15,17 @@ def close_yesterdays_post(lemmy, post, cur_scoreboard):
         logging.info(f"Daily Thread dates are different {post_date}:{cur_date}, will close the old one")
         PostUtils.safe_api_call(lemmy.post.feature, post_id=post['id'], feature=False,
                                 feature_type=FeatureType.Community)
-        logging.info(f"UN-FEATURED new Post {post['id']}")
+        logging.info(f"UN-FEATURED old Post {post['id']}")
 
 
 def new_daily_post(lemmy, cur_scoreboard, community_id):
     name = f"{PostUtils.DAILY_INDEX_PREFIX}[{cur_scoreboard.score_board_date}]"
     response = PostUtils.safe_api_call(lemmy.post.create, community_id=community_id, name=name)
-    post_id = int(response["post_view"]["post"]["id"])
-    logging.info(f"CREATED new Post {post_id}")
-    PostUtils.safe_api_call(lemmy.post.feature, post_id=post_id, feature=True, feature_type=FeatureType.Community)
-    logging.info(f"FEATURED new Post {post_id}")
-    return post_id
+    post = response["post_view"]["post"]
+    logging.info(f"CREATED new Post {post['id']}")
+    PostUtils.safe_api_call(lemmy.post.feature, post_id=post['id'], feature=True, feature_type=FeatureType.Community)
+    logging.info(f"FEATURED new Post {post['id']}")
+    return post
 
 
 def find_game_post(game_type, game_id, posts):
@@ -35,7 +35,7 @@ def find_game_post(game_type, game_id, posts):
     return None
 
 
-def update_daily_games_post(lemmy, cur_scoreboard, post_id, posts):
+def update_daily_games_post(lemmy, cur_scoreboard, post, posts):
     cur_games = cur_scoreboard.games.get_dict()
     body = f"|TIP OFF | HOME | AWAY| GAME THREAD | STATUS | POST GAME THREAD|\n" \
            f"| :--: | :--: | :--: | :--: | :--: | :--: |"
@@ -57,15 +57,18 @@ def update_daily_games_post(lemmy, cur_scoreboard, post_id, posts):
                f" | {'[Game thread](' + game_post['ap_id'] + ')' if game_post else ''}" \
                f" | {status}" \
                f" | {'[Post Game thread](' + post_game_post['ap_id'] + ')' if post_game_post else ''} |"
-
-    PostUtils.safe_api_call(lemmy.post.edit, post_id=int(post_id), body=body)
+    if post['body'] != body:
+        logging.info(f"Will Update Game Index Thread at {post['ap_id']}")
+        PostUtils.safe_api_call(lemmy.post.edit, post_id=int(post['id']), body=body)
+    else:
+        logging.info(f"No changes found for Game Index Thread ")
 
 
 def get_todays_post_id(daily_posts, cur_scoreboard):
     for post in daily_posts:
         post_date = (post['name']).split('[')[1].split("]")[0]
         if post_date == cur_scoreboard.score_board_date:
-            return post['id']
+            return post
 
 
 class DailyIndexMaker:
@@ -81,11 +84,11 @@ class DailyIndexMaker:
             # Delete the sticky posts that aren't today's - there really should be only one
             # try to find today, if it doesn't exist - create one
             [close_yesterdays_post(lemmy, post, cur_scoreboard) for post in daily_posts]
-            if (post_id := get_todays_post_id(daily_posts, cur_scoreboard)) is None:
+            if (post := get_todays_post_id(daily_posts, cur_scoreboard)) is None:
                 # really should happen only when there's one post (yesterday) and no new one
-                post_id = new_daily_post(lemmy, cur_scoreboard, community_id)
+                post = new_daily_post(lemmy, cur_scoreboard, community_id)
         else:
-            post_id = new_daily_post(lemmy, cur_scoreboard, community_id)
+            post = new_daily_post(lemmy, cur_scoreboard, community_id)
 
-        logging.info(f"Will now update the daily games post: {post_id}")
-        update_daily_games_post(lemmy, cur_scoreboard, post_id, all_posts)
+        logging.info(f"Will now update the daily games post: {post['id']}")
+        update_daily_games_post(lemmy, cur_scoreboard, post, all_posts)
