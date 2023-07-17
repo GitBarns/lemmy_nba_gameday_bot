@@ -4,11 +4,29 @@ from datetime import datetime
 
 import pytz
 from dateutil import parser
+from nba_api.stats.static import teams
 
 
 class GameUtils:
     NOT_STARTED = "Not Started"
     STARTING_SOON = "Starting Soon"
+
+    @staticmethod
+    def get_team_by_name(team_name):
+        """
+        https://github.com/swar/nba_api/blob/master/docs/nba_api/stats/examples.md#teams
+        :param team_name: abbreviation (e.g. BOS) or full name (e.g. boston celtics)
+        :return: team
+        """
+        if teams.find_team_by_abbreviation(team_name) is not None:
+            return teams.find_team_by_abbreviation(team_name)
+        elif len(teams.find_teams_by_full_name(team_name)) > 0:
+            return teams.find_teams_by_full_name(team_name)[0]
+        elif len(teams.find_teams_by_city(team_name)) > 0:
+            return teams.find_teams_by_city(team_name)[0]
+        return None
+
+
 
     @staticmethod
     def get_game_time_est(game):

@@ -4,7 +4,7 @@ from nba_api.live.nba.endpoints import scoreboard, boxscore
 from pythorhead import Lemmy
 from pythorhead.types import ListingType
 
-import nba
+from . import DailyIndexMaker
 from .summerleague import summerscoreboard, summerboxscore
 from .utils import PostUtils, MarkupUtils, GameUtils
 
@@ -12,32 +12,47 @@ from .utils import PostUtils, MarkupUtils, GameUtils
 class GameThreadMaker:
     sent_pm_already: bool = False
 
-    def __init__(self, api_base_url, user_name, password, community_name, is_summer_league, admin_id):
+    def __init__(self, api_base_url, user_name, password, community_name, team_name, is_summer_league, admin_id):
+        self.team = None
         self.lemmy = None
+        self.community_id = None
+        self.team_name = team_name
         self.api_base_url = api_base_url
         self.admin_id = admin_id
         self.community_name = community_name
         self.password = password
         self.user_name = user_name
-        self.community_id = None
         self.is_summer_league = is_summer_league
 
     def log_in(self):
         self.lemmy = Lemmy(self.api_base_url)
+
         if self.lemmy.nodeinfo is None:
-            raise RuntimeError(
-                f"Failed to connect to Lemmy instance {self.api_base_url}, leaving...")
+            raise RuntimeError(f"Failed to connect to Lemmy instance {self.api_base_url}, leaving...")
+
         if not PostUtils.safe_api_call(self.lemmy.log_in, username_or_email=self.user_name, password=self.password):
             raise RuntimeError("Failed to log into the Lemmy instance, please verify your bot credentials")
+
         community = PostUtils.safe_api_call(self.lemmy.community.get, name=self.community_name)
+        if len(community) == 0:
+            raise RuntimeError(f"Failed to find community named {self.community_name}")
         self.community_id = community["community_view"]["community"]["id"]
-        logging.debug(f"community is {self.community_id}:{community}")
+        logging.info(f"Lemmy Community found - {self.community_name} ({self.community_id})")
+
+        if self.team_name:
+            self.team = GameUtils.get_team_by_name(self.team_name)
+            if self.team is None:
+                raise RuntimeError(f"Failed to find team by name {self.team_name}")
+            logging.info(f"NBA Team found - {self.team['full_name']} ({self.team['id']})")
+        else:
+            logging.info(f"No team specified, will process ALL teams")
 
     def run(self):
         try:
             self.process_game_threads()
-            logging.info("Will process Daily Index Thread")
-            nba.DailyIndexMaker.run(self.lemmy, community_id=self.community_id, is_summer_league=self.is_summer_league)
+            if not self.team:
+                logging.info("Will process Daily Index Thread")
+                DailyIndexMaker.run(self.lemmy, community_id=self.community_id, is_summer_league=self.is_summer_league)
         except Exception:
             logging.exception("Failed to run")
             if not GameThreadMaker.sent_pm_already:
@@ -46,12 +61,10 @@ class GameThreadMaker:
                 GameThreadMaker.sent_pm_already = True
 
     def process_game_threads(self):
+        # Current active game posts
         active_lemmy_game_threads = self.get_lemmy_game_threads()
-
         # Today's Score Board
-        board = summerscoreboard.SummerScoreBoard() if self.is_summer_league else scoreboard.ScoreBoard()
-        scorebox_games = board.games.get_dict()
-        [logging.debug(f"Found a game in today's scorebox: {PostUtils.game_info(game)}") for game in scorebox_games]
+        scorebox_games = self.get_todays_scoreboard()
 
         upcoming_games = [game for game in scorebox_games if GameUtils.get_game_status(game) == GameUtils.STARTING_SOON]
         [logging.info(f"Found an upcoming game: {PostUtils.game_info(game)}") for game in upcoming_games]
@@ -70,6 +83,15 @@ class GameThreadMaker:
         # go through all active lemmy game threads and find them in today's scorebox
         # if any aren't found in the scorebox for some reason (day switch?) - close them just in case
         self.close_orphan_posts(scorebox_games, active_lemmy_game_threads)
+
+    def get_todays_scoreboard(self):
+        board = summerscoreboard.SummerScoreBoard() if self.is_summer_league else scoreboard.ScoreBoard()
+        sb_games = board.games.get_dict()
+        if self.team:
+            sb_games = [sb for sb in sb_games if
+                        self.team['id'] in (sb['awayTeam']['teamId'], sb['homeTeam']['teamId'])]
+        [logging.info(f"Found a game in today's scorebox: {PostUtils.game_info(game)}") for game in sb_games]
+        return sb_games
 
     def get_lemmy_game_threads(self):
         # get all posts by the bot that are saved (i.e. active)

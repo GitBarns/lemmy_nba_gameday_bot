@@ -61,7 +61,7 @@ def update_daily_games_post(lemmy, cur_scoreboard, post, posts):
         logging.info(f"Will Update Game Index Thread at {post['ap_id']}")
         PostUtils.safe_api_call(lemmy.post.edit, post_id=int(post['id']), body=body)
     else:
-        logging.info(f"No changes found for Game Index Thread ")
+        logging.info(f"No changes found for Game Index Thread")
 
 
 def get_todays_post_id(daily_posts, cur_scoreboard):
@@ -74,21 +74,32 @@ def get_todays_post_id(daily_posts, cur_scoreboard):
 class DailyIndexMaker:
     @staticmethod
     def run(lemmy: Lemmy = None, community_id=None, is_summer_league=False):
+        """
+        Daily Index Thread management - pull last 50 posts and filter to DIT
+        if the list is empty - create a new DIT
+        if there list isn't empty, close the old ones (simply un-feature) and check if today's there
+        if today's in the list - update it
+        if today's not there - create a new one
+
+        :param lemmy: Pythorhead Lemmy api
+        :param community_id: id of target community
+        :param is_summer_league: needed to switch to Summer League classes
+        :return:
+        """
         cur_scoreboard = summerscoreboard.SummerScoreBoard() if is_summer_league else scoreboard.ScoreBoard()
         all_posts = PostUtils.get_last50_posts(lemmy=lemmy, community_id=community_id)
         daily_posts = [post for post in all_posts if
                        str(post['name']).startswith(PostUtils.DAILY_INDEX_PREFIX) and post[
                            'featured_community'] is True]
 
-        if len(daily_posts) >= 1:
+        if len(daily_posts) == 0:
+            post = new_daily_post(lemmy, cur_scoreboard, community_id)
+        else:  # len(daily_posts) >= 1
             # Delete the sticky posts that aren't today's - there really should be only one
             # try to find today, if it doesn't exist - create one
             [close_yesterdays_post(lemmy, post, cur_scoreboard) for post in daily_posts]
             if (post := get_todays_post_id(daily_posts, cur_scoreboard)) is None:
                 # really should happen only when there's one post (yesterday) and no new one
                 post = new_daily_post(lemmy, cur_scoreboard, community_id)
-        else:
-            post = new_daily_post(lemmy, cur_scoreboard, community_id)
 
-        logging.info(f"Will now update the daily games post: {post['id']}")
         update_daily_games_post(lemmy, cur_scoreboard, post, all_posts)

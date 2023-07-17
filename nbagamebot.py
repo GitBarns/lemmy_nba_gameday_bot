@@ -7,18 +7,17 @@ from logging.handlers import RotatingFileHandler
 from nba.gamethreadmaker import GameThreadMaker
 
 
-def run_bot(domain, community, username, password, is_summer_league, admin_id, sleep=None):
+def run_bot(domain, community, username, password, team_name, is_summer_league, admin_id, sleep=None):
     try:
-        logging.info("Starting post maker")
-        bot = GameThreadMaker(domain, username, password, community, is_summer_league, admin_id)
-        logging.info(f"Logging into {domain}/c/{community}")
+        logging.info("Starting bot run")
+        bot = GameThreadMaker(domain, username, password, community, team_name, is_summer_league, admin_id)
         bot.log_in()
         logging.info(f"Logged into {domain}/c/{community}, will begin processing games")
         bot.run()
     except Exception:
         logging.exception("Failed to process match threads")
     finally:
-        logging.info(f"Done bot cycle, will sleep for {sleep} seconds...")
+        logging.info(f"Done, will sleep for {sleep} seconds...")
         time.sleep(int(sleep))
 
 
@@ -32,6 +31,7 @@ def main():
     parser.add_argument("--community", default=os.environ.get("BOT_COMMUNITY"))
     parser.add_argument("--admin_id", default=os.environ.get("BOT_ADMIN_ID"))
     parser.add_argument("--sleep", default=os.environ.get("BOT_SLEEP_SECS"))
+    parser.add_argument("--team_name", default=os.environ.get("BOT_TEAM_NAME"))
     parser.add_argument("--summer_league", default=os.environ.get("FORCE_SUMMER_LEAGUE"))
     args = parser.parse_args()
     if not args.domain or not args.username or not args.password or not args.community or not args.admin_id or not args.sleep:
@@ -49,7 +49,7 @@ def main():
     logging.info("Starting up the Bot...")
 
     while True:
-        run_bot(args.domain, args.community, args.username, args.password, args.summer_league, args.admin_id, args.sleep)
+        run_bot(args.domain, args.community, args.username, args.password, args.team_name, args.summer_league, args.admin_id, args.sleep)
 
 
 if __name__ == "__main__":
