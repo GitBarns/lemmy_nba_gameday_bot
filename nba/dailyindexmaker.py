@@ -3,8 +3,6 @@ import logging
 from nba_api.live.nba.endpoints import scoreboard
 from pythorhead import Lemmy
 from pythorhead.types import FeatureType
-
-from nba.summerleague import summerscoreboard
 from nba.utils import PostUtils, GameUtils
 
 
@@ -73,7 +71,7 @@ def get_todays_post_id(daily_posts, cur_scoreboard):
 
 class DailyIndexMaker:
     @staticmethod
-    def run(lemmy: Lemmy = None, community_id=None, is_summer_league=False):
+    def run(lemmy: Lemmy = None, community_id=None):
         """
         Daily Index Thread management - pull last 50 posts and filter to DIT
         if the list is empty - create a new DIT
@@ -83,10 +81,9 @@ class DailyIndexMaker:
 
         :param lemmy: Pythorhead Lemmy api
         :param community_id: id of target community
-        :param is_summer_league: needed to switch to Summer League classes
         :return:
         """
-        cur_scoreboard = summerscoreboard.SummerScoreBoard() if is_summer_league else scoreboard.ScoreBoard()
+        cur_scoreboard = scoreboard.ScoreBoard()
         all_posts = PostUtils.get_last50_posts(lemmy=lemmy, community_id=community_id)
         daily_posts = [post for post in all_posts if
                        str(post['name']).startswith(PostUtils.DAILY_INDEX_PREFIX) and post[
