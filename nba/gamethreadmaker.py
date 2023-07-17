@@ -53,7 +53,7 @@ class GameThreadMaker:
             if not self.team:
                 logging.info("Will process Daily Index Thread")
                 DailyIndexMaker.run(self.lemmy, community_id=self.community_id, is_summer_league=self.is_summer_league)
-        except Exception:
+        except:
             logging.exception("Failed to run")
             if not GameThreadMaker.sent_pm_already:
                 self.lemmy.private_message.create(content="Failed to process game posts, go check logs",
@@ -63,25 +63,30 @@ class GameThreadMaker:
     def process_game_threads(self):
         # Current active game posts
         active_lemmy_game_threads = self.get_lemmy_game_threads()
+
         # Today's Score Board
         scorebox_games = self.get_todays_scoreboard()
 
+        # Create Gameday threads for games that are about to start (<15 mins from start time)
         upcoming_games = [game for game in scorebox_games if GameUtils.get_game_status(game) == GameUtils.STARTING_SOON]
         [logging.info(f"Found an upcoming game: {PostUtils.game_info(game)}") for game in upcoming_games]
         self.create_upcoming_game_threads(upcoming_games, active_lemmy_game_threads)
 
+        # Update all ongoing game threads
         live_games = [game for game in scorebox_games if game["gameStatus"] == 2]
         [logging.info(f"Found a live game: {PostUtils.game_info(game)}") for game in live_games]
         self.update_live_threads(live_games, active_lemmy_game_threads)
 
-        # Get all finished games, compare them to current ongoing game threads (upcoming + playing)
-        # if the same game is in both groups - close the game thread  with a final update and open a post game thread with detailed stats
+        # Get all finished games from today's scoreboard:
+        # 1 - find & close the game thread with a final update
+        # 2 - open a post game thread with detailed stats
         finished_games = [game for game in scorebox_games if game["gameStatus"] == 3]
         [logging.info(f"Found a finished game: {PostUtils.game_info(game)}") for game in finished_games]
         self.close_finished_games(finished_games, active_lemmy_game_threads)
 
-        # go through all active lemmy game threads and find them in today's scorebox
-        # if any aren't found in the scorebox for some reason (day switch?) - close them just in case
+        # Threads clean up just in case:
+        # go through all active lemmy game threads and look for them in today's scorebox
+        # if they're not found for some reason (day switch in scorebox?) - close them just in case
         self.close_orphan_posts(scorebox_games, active_lemmy_game_threads)
 
     def get_todays_scoreboard(self):

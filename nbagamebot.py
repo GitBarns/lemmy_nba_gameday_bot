@@ -7,18 +7,18 @@ from logging.handlers import RotatingFileHandler
 from nba.gamethreadmaker import GameThreadMaker
 
 
-def run_bot(domain, community, username, password, team_name, is_summer_league, admin_id, sleep=None):
+def run_bot(domain, community, username, password, team_name, is_summer_league, admin_id, sleep):
     try:
         logging.info("Starting bot run")
         bot = GameThreadMaker(domain, username, password, community, team_name, is_summer_league, admin_id)
         bot.log_in()
         logging.info(f"Logged into {domain}/c/{community}, will begin processing games")
         bot.run()
-    except Exception:
-        logging.exception("Failed to process match threads")
+    except:
+        logging.exception("Failed to run the bot")
     finally:
         logging.info(f"Done, will sleep for {sleep} seconds...")
-        time.sleep(int(sleep))
+        time.sleep(sleep)
 
 
 def main():
@@ -34,7 +34,7 @@ def main():
     parser.add_argument("--team_name", default=os.environ.get("BOT_TEAM_NAME"))
     parser.add_argument("--summer_league", default=os.environ.get("FORCE_SUMMER_LEAGUE"))
     args = parser.parse_args()
-    if not args.domain or not args.username or not args.password or not args.community or not args.admin_id or not args.sleep:
+    if not args.domain or not args.username or not args.password or not args.community or not args.admin_id:
         exit(parser.print_usage())
 
     logging.root.handlers = []
@@ -47,9 +47,12 @@ def main():
         ]
     )
     logging.info("Starting up the Bot...")
+    if not args.sleep:
+        args.sleep = 60
 
     while True:
-        run_bot(args.domain, args.community, args.username, args.password, args.team_name, args.summer_league, args.admin_id, args.sleep)
+        run_bot(args.domain, args.community, args.username, args.password, args.team_name, args.summer_league,
+                args.admin_id, args.sleep)
 
 
 if __name__ == "__main__":

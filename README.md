@@ -1,13 +1,20 @@
 # Lemmy NBA Gameday Bot
 
-A Lemmy Bot that create and maintains NBA Game threads, Post Game threads and Daily Game Index threads
+[![GitHub license](https://img.shields.io/badge/license-Apache-blue.svg)](https://raw.githubusercontent.com/tjkessler/plemmy/master/LICENSE.txt)
 
-DISCLAIMER: I HOLD NO RESPONSIBILITY ON THE BOT OR THE CODE, IT MAY OR MAY NOT WORK, USE AT YOUR OWN RISK!
+A Lemmy Bot that create and maintains NBA Game threads, Post Game threads and Daily Game Index threads.
+
+The Bot uses 
+* [`nba_api`](https://github.com/swar/nba_api) - An API Client package to access the APIs for NBA.com
+* [`pythorhead`](https://github.com/db0/pythorhead) - A python library for interacting with Lemmy
+
+
+DISCLAIMER: THIS CODE IS STILL IN DEVELOPMENT, USE AT YOUR OWN RISK!
 
 ## SETUP
-* Create a Lemmy bot account. Creating a Bot is identical to creating a user on your Lemmy Instance but please make sure you mark your Bot as such in it's settings page
-* Optionally - Make the Bot a Mod if Daily Index Posts are needed so it can Feature these posts (pin them to the top of the community) 
-* A hosting solution to run the Bot from. The GCP free tier should be enough as the Bot is very lightweight. 
+* **Create a Lemmy Bot account**: Creating a Bot is identical to creating a user on your Lemmy Instance but please make sure you mark your Bot as such in it's settings page
+  * _Optionally_: Make the Bot a Mod if Daily Index Posts are needed so it can Feature these posts (pin them to the top of the community) 
+ 
 
 ## Parameters
 The following parameters are needed for the bot to run:
@@ -30,3 +37,21 @@ git clone https://github.com/GitBarns/Lemmy_NBA_Gameday_Bot.git
 cd Lemmy_NBA_Gameday_Bot
 python3 ./nbagamebot.py --domain 'https://lemmy.world' --username '<Bot User name or Email>' --password '<Bot Password>' --community 'nba' --admin_id <LEMMY USER ID>
 ```
+
+**Logs**  would be created in the Logs folder 
+
+**Note**: I highly recommend running the Bot as a background process, using nohup or tmux or byobu or something similar 
+
+## Bugs
+
+Encounter a bug, [report a bug](https://github.com/GitBarns/lemmy_nba_gameday_bot/issues).
+
+## FAQ
+### I got the code, now what?
+Well, you will need to self-host the bot. There are quite a few free options for hosting a small python project such as this.
+One potential solution is to open a Google Cloud Account and use their free tier compute instance, which should be enough,
+
+### How can I contribute?
+Want to contribute? Make a pull request. Contact [@GitBarns](https://github.com/GitBarns) with any questions.  
+
+### What about MLB, 

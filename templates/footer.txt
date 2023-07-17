@@ -1,5 +1,6 @@
-This post was created by your friendly [NBA Bot](https://lemmy.world/u/MatchThreadBot).
-Did I make a mistake? Have a suggestion? [PM me here](https://lemmy.world/create_private_message/98250)
+This post was created by your friendly NBA Bot [GitHub](https://lemmy.world/u/MatchThreadBot).
+
+Did I make a mistake? Have a suggestion? [Please PM me here](https://lemmy.world/create_private_message/98250)
 
 ::: spoiler bot info
 ^$footer_time\ game\ id\:\ $game_id^
