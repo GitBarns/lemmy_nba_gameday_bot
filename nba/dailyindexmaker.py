@@ -57,7 +57,7 @@ def update_daily_games_post(lemmy, cur_scoreboard, post, posts):
                f" | {'[Game thread](' + game_post['ap_id'] + ')' if game_post else ''}" \
                f" | {status}" \
                f" | {'[Post Game thread](' + post_game_post['ap_id'] + ')' if post_game_post else ''} |"
-    if post['body'] != body:
+    if 'body' not in post or post['body'] is None or post['body'] != body:
         logging.info(f"Will Update Game Index Thread at {post['ap_id']}")
         PostUtils.safe_api_call(lemmy.post.edit, post_id=int(post['id']), body=body)
     else:
