@@ -93,12 +93,10 @@ class MarkupUtils:
         return body
 
     @staticmethod
-    def get_thread_title(game, final, is_summer_league):
+    def get_thread_title(game, final):
         title = f"{PostUtils.GAME_THREAD_PREFIX}{game['homeTeam']['teamCity']} {game['homeTeam']['teamName']} ({game['homeTeam']['wins']}-{game['homeTeam']['losses']})" \
                 f" Vs. {game['awayTeam']['teamCity']} {game['awayTeam']['teamName']} ({game['awayTeam']['wins']}-{game['awayTeam']['losses']}) "
         title = f"{title} - {GameUtils.get_game_datetime_est(game)}"
-        if is_summer_league:
-            title = f"{title} | Summer League"
         if final:
             title = f"{title} [Final Score  {game['homeTeam']['score']}:{game['awayTeam']['score']}]"
 
