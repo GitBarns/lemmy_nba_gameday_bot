@@ -1,3 +1,3 @@
-# lemmy_nba_thread_maker
+# Lemmy NBA Gameday Bot
 
-Playing around with Lemmy APIs
+This
