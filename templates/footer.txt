@@ -1,4 +1,4 @@
-This post was created by your friendly NBA Bot [GitHub](https://lemmy.world/u/MatchThreadBot).
+This post was created by your friendly NBA Bot [GitHub](https://github.com/GitBarns/lemmy_nba_gameday_bot).
 
 Did I make a mistake? Have a suggestion? [Please PM me here](https://lemmy.world/create_private_message/98250)
 
