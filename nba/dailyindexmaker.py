@@ -4,7 +4,6 @@ from nba_api.live.nba.endpoints import scoreboard
 from pythorhead import Lemmy
 from pythorhead.types import FeatureType
 
-from nba.summerleague import summerscoreboard
 from nba.utils import PostUtils, GameUtils
 
 
@@ -19,6 +18,8 @@ def close_yesterdays_post(lemmy, post, cur_scoreboard):
 
 
 def new_daily_post(lemmy, cur_scoreboard, community_id):
+    if len(cur_scoreboard.games.get_dict()) == 0:
+        return None
     name = f"{PostUtils.DAILY_INDEX_PREFIX}[{cur_scoreboard.score_board_date}]"
     response = PostUtils.safe_api_call(lemmy.post.create, community_id=community_id, name=name)
     post = response["post_view"]["post"]
@@ -36,6 +37,8 @@ def find_game_post(game_type, game_id, posts):
 
 
 def update_daily_games_post(lemmy, cur_scoreboard, post, posts):
+    if len(cur_scoreboard.games.get_dict()) == 0:
+        return None
     cur_games = cur_scoreboard.games.get_dict()
     body = f"|TIP OFF | HOME | AWAY| GAME THREAD | STATUS | POST GAME THREAD|\n" \
            f"| :--: | :--: | :--: | :--: | :--: | :--: |"
@@ -73,7 +76,7 @@ def get_todays_post_id(daily_posts, cur_scoreboard):
 
 class DailyIndexMaker:
     @staticmethod
-    def run(lemmy: Lemmy = None, community_id=None, is_summer_league=False):
+    def run(lemmy: Lemmy = None, community_id=None):
         """
         Daily Index Thread management - pull last 50 posts and filter to DIT
         if the list is empty - create a new DIT
@@ -83,21 +86,21 @@ class DailyIndexMaker:
 
         :param lemmy: Pythorhead Lemmy api
         :param community_id: id of target community
-        :param is_summer_league: needed to switch to Summer League classes
         :return:
         """
-        cur_scoreboard = summerscoreboard.SummerScoreBoard() if is_summer_league else scoreboard.ScoreBoard()
+        cur_scoreboard = scoreboard.ScoreBoard()
         all_posts = PostUtils.get_last50_posts(lemmy=lemmy, community_id=community_id)
         daily_posts = [post for post in all_posts if
                        str(post['name']).startswith(PostUtils.DAILY_INDEX_PREFIX) and post[
                            'featured_community'] is True]
 
-        if len(daily_posts) == 0:
+        if len(daily_posts) == 0 and len(cur_scoreboard.games.get_dict()) > 0:
             post = new_daily_post(lemmy, cur_scoreboard, community_id)
         else:  # len(daily_posts) >= 1
             # Delete the sticky posts that aren't today's - there really should be only one
             # try to find today, if it doesn't exist - create one
             [close_yesterdays_post(lemmy, post, cur_scoreboard) for post in daily_posts]
+
             if (post := get_todays_post_id(daily_posts, cur_scoreboard)) is None:
                 # really should happen only when there's one post (yesterday) and no new one
                 post = new_daily_post(lemmy, cur_scoreboard, community_id)

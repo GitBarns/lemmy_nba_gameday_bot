@@ -5,14 +5,13 @@ from pythorhead import Lemmy
 from pythorhead.types import ListingType
 
 from . import DailyIndexMaker
-from .summerleague import summerscoreboard, summerboxscore
 from .utils import PostUtils, MarkupUtils, GameUtils
 
 
 class GameThreadMaker:
     sent_pm_already: bool = False
 
-    def __init__(self, api_base_url, user_name, password, community_name, team_name, is_summer_league, admin_id):
+    def __init__(self, api_base_url, user_name, password, community_name, team_name, admin_id):
         self.team = None
         self.lemmy = None
         self.community_id = None
@@ -22,7 +21,6 @@ class GameThreadMaker:
         self.community_name = community_name
         self.password = password
         self.user_name = user_name
-        self.is_summer_league = is_summer_league
 
     def log_in(self):
         self.lemmy = Lemmy(self.api_base_url)
@@ -52,7 +50,7 @@ class GameThreadMaker:
             self.process_game_threads()
             if not self.team:
                 logging.info("Will process Daily Index Thread")
-                DailyIndexMaker.run(self.lemmy, community_id=self.community_id, is_summer_league=self.is_summer_league)
+                DailyIndexMaker.run(self.lemmy, community_id=self.community_id)
         except:
             logging.exception("Failed to run")
             if not GameThreadMaker.sent_pm_already:
@@ -90,7 +88,7 @@ class GameThreadMaker:
         self.close_orphan_posts(scorebox_games, active_lemmy_game_threads)
 
     def get_todays_scoreboard(self):
-        board = summerscoreboard.SummerScoreBoard() if self.is_summer_league else scoreboard.ScoreBoard()
+        board = scoreboard.ScoreBoard()
         sb_games = board.games.get_dict()
         if self.team:
             sb_games = [sb for sb in sb_games if
@@ -119,7 +117,7 @@ class GameThreadMaker:
 
     def create_new_game_thread(self, game):
         logging.info(f"CREATE a new game post: {PostUtils.game_info(game)}")
-        name = MarkupUtils.get_thread_title(game, False, self.is_summer_league)
+        name = MarkupUtils.get_thread_title(game, False)
         body = MarkupUtils.get_live_game_body(game)
         response = PostUtils.safe_api_call(self.lemmy.post.create, community_id=self.community_id, name=name, body=body)
         post_id = int(response["post_view"]["post"]["id"])
@@ -143,7 +141,7 @@ class GameThreadMaker:
             self.update_game_thread(live_game, post_id, False)
 
     def update_game_thread(self, live_game, post_id, final):
-        name = MarkupUtils.get_thread_title(live_game, final, self.is_summer_league)
+        name = MarkupUtils.get_thread_title(live_game, final)
         body = MarkupUtils.get_live_game_body(live_game)
         PostUtils.safe_api_call(self.lemmy.post.edit, post_id=int(post_id), body=body, name=name)
 
@@ -160,8 +158,7 @@ class GameThreadMaker:
 
     def create_pgt(self, game):
         logging.info(f"CREATE New Post Game Thread: {PostUtils.game_info(game)}")
-        box_score = summerboxscore.SummerBoxScore(
-            game_id=game["gameId"]) if self.is_summer_league else boxscore.BoxScore(game_id=game["gameId"])
+        box_score = boxscore.BoxScore(game_id=game["gameId"])
         name = MarkupUtils.get_pgt_title(game)
         body = MarkupUtils.get_game_body(box_score.get_dict()['game'], game)
         PostUtils.safe_api_call(self.lemmy.post.create, community_id=self.community_id, name=name, body=body)
